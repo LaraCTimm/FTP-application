@@ -2,11 +2,18 @@ import socket
 import threading
 import os
 import sys
+from pathlib2 import Path
+
+import hashlib
+# mystring = input('Enter String to hash: ')
+# # Assumes the default UTF-8
+# hash_object = hashlib.md5(mystring.encode())
+# print(hash_object.hexdigest())
 
 locIP = socket.gethostbyname(socket.gethostname())
 # print loc_ip
 locPort = 10000
-
+currentDirectory = os.path.abspath('.')
 #---------------------------------------------------------------------------
 
 class serverThread(threading.Thread):
@@ -32,70 +39,135 @@ class clientThread(threading.Thread):
         threading.Thread.__init__(self)
         self.connSock = conn
         self.connAddr = addr
+        self.baseDirectory = ''
+        self.workingDirectory = ''
+        self.loggedIn = False
+        self.username = ''
+
+        passwordFile = open("userdata.txt", 'r')
+        self.userData = passwordFile.readlines()
+        passwordFile.close()
+
+        self.userRow = -1
 
     def run(self):
         self.connSock.send('220 Service ready for new user.\r\n')
         while 1:
             command = self.connSock.recv(256)
-            print command
-            self.connSock.send(command)
+            # print command
+            # self.connSock.send(command)
 
-            # if not command:
-            #     break
-            # else:
-            #     print 'Recieved: ', command
-            #     try:
-            #         action = getattr(self, command[:4].strip().upper())
-            #         action(command)
-            #     except Exception, err:
-            #         print 'Error: ', err
-            #         self.connSock.send('500 Syntax error, command unrecognized.\r\n')
+            if not command:
+                break
+            else:
+                print 'Recieved: ', command
+                try:
+                    action = getattr(self, command[:4].strip().upper())
+                    action(command)
+                except Exception, err:
+                    print 'Error: ', err
+                    self.connSock.send('500 Syntax error, command unrecognized.\r\n')
 
     # access control commands ---------------------------------------
-    def USER(self):
+    def USER(self, command):
         # USER <SP> <username> <CRLF>
         # username - string
+        
+        # check if user is already registered
+        self.username = command[5:]
+        self.userRow = -1
+        if self.username != '':
+            for i in range(0, len(self.userData)):
+                print 'checking line: ', i
+                index = self.userData[i].find(self.username)
+                print index
+                if index != -1:
+                    self.userRow = i
+            if self.userRow > -1:
+                print self.username
+                self.baseDirectory = os.path.join(currentDirectory, "serverDirectory" )
+                self.baseDirectory = os.path.join(self.baseDirectory, self.username)
+                print currentDirectory
+                print self.baseDirectory
+                user_dir = Path(self.baseDirectory)
+                print user_dir
+                if user_dir.is_dir():
+                    self.connSock.send('331 User name okay, need password.\r\n')
+                    return
+                else:
+                    self.user = ''
+                    self.connSock.send('332 Need account for login. <directory not found>\r\n')
+                    return
+            else:
+                self.connSock.send('332 Need account for login. <username not registered>\r\n')
+                return
+        else:
+            self.connSock.send('332 Need account for login. <invalid username>\r\n')
+            return
 
-    def PASS(self):
+    def PASS(self, command):
         # PASS <SP> <password> <CRLF>
         # password - string
 
-    def QUIT(self):
-        # QUIT <CRLF>
+        password = command[5:]
+        if password != '' and password != ' ':
+            if self.username != '':
 
-    # transfer parameter commands -----------------------------------
-    def PORT(self):
-        # PORT <SP> <host-port> <CRLF>
-        # host-post spec for data port to be used in data connection
-        # 32bit internet host address, 16bit port address
-        # "PORT h1,h2,h3,h4,p1,p2"
+                if self.userRow > -1:
+                    storedPassword = self.userData[self.userRow][-(len(password)+1):-1] #32 later if cd5 hash
+                    if storedPassword == password:
+                        self.loggedIn = True
+                        self.connSock.send('230 User logged in, proceed.\r\n')
+                        return
+                    else:
+                        self.connSock.send('530 Not logged in. <password incorrect>\r\n')
+                        return
+                else:
+                    self.connSock.send('332 Need account for login. <username not registered>\r\n')
+                    return
+            else:
+                self.connSock.send('332 Need account for login. <invalid username>\r\n')
+                return
+        else:
+            self.connSock.send('332 Need account for login. <invalid password>\r\n')
+            return
+        
+    # def QUIT(self, command):
+    #     # QUIT <CRLF>
 
-    def TYPE(self):
-        # TYPE <SP> <type-code> <CRLF>
-        # specifies representation type (ascii[D], ebcdic, image, 
-        #       local byte size)
+    # # transfer parameter commands -----------------------------------
+    # def PORT(self, command):
+    #     # PORT <SP> <host-port> <CRLF>
+    #     # host-post spec for data port to be used in data connection
+    #     # 32bit internet host address, 16bit port address
+    #     # "PORT h1,h2,h3,h4,p1,p2"
 
-    def MODE(self):
-        # MODE <SP> <mode-code> <CRLF>
-        # specify data transfer mode (stream[D], block, compressed)
+    # def TYPE(self, command):
+    #     # TYPE <SP> <type-code> <CRLF>
+    #     # specifies representation type (ascii[D], ebcdic, image, 
+    #     #       local byte size)
 
-    def STRU(self):
-        # STRU <SP> <structure-code> <CRLF>
-        # specifies file structure (file[D], record, page)
+    # def MODE(self, command):
+    #     # MODE <SP> <mode-code> <CRLF>
+    #     # specify data transfer mode (stream[D], block, compressed)
 
-    # service commands -----------------------------------------------
-    def RETR(self):
-        # RETR <SP> <pathname> <CRLF>
-        # transfer a copy file to client over data connection
+    # def STRU(self, command):
+    #     # STRU <SP> <structure-code> <CRLF>
+    #     # specifies file structure (file[D], record, page)
 
-    def STOR(self):
-        # STOR <SP> <pathname> <CRLF>
-        # accept data from data connection and store as file on server
+    # # service commands -----------------------------------------------
+    # def RETR(self, command):
+    #     # RETR <SP> <pathname> <CRLF>
+    #     # transfer a copy file to client over data connection
 
-    def NOOP(self):
-        # NOOP <CRLF>
-        # server sends an okay reply
-        self.connSock.send('200 Command okay.\r\n')
+    # def STOR(self, command):
+    #     # STOR <SP> <pathname> <CRLF>
+    #     # accept data from data connection and store as file on server
+
+    # def NOOP(self, command):
+    #     # NOOP <CRLF>
+    #     # server sends an okay reply
+    #     self.connSock.send('200 Command okay.\r\n')
 
 
 

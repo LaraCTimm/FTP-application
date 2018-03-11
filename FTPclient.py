@@ -7,6 +7,9 @@ servIP = socket.gethostbyname(socket.gethostname())
 print servIP
 servPort = 10000
 
+
+
+
 clientSock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 clientSock.connect((servIP, servPort))
 
@@ -21,7 +24,7 @@ if clientSock.recv(256)[:3] == '220':       # wait for service ready response
 
         # recieve and print message received
         echoSentence = clientSock.recv(1024)
-        print 'Server Echo: ', echoSentence
+        print 'Server Echo:', echoSentence
         print ("")
         
         # if server wishes to close the connection, close the socket
