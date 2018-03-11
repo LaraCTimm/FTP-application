@@ -53,7 +53,6 @@ class FTPserverThread(threading.Thread):
     def TYPE(self,cmd):
         self.mode=cmd[5]
         self.conn.send('200 Binary mode.\r\n')
-
     def CDUP(self,cmd):
         if not os.path.samefile(self.cwd,self.basewd):
             #learn from stackoverflow
@@ -107,7 +106,6 @@ class FTPserverThread(threading.Thread):
         self.datasock.close()
         if self.pasv_mode:
             self.servsock.close()
-
 
     def LIST(self,cmd):
         self.conn.send('150 Here comes the directory listing.\r\n')
