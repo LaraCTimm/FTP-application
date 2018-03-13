@@ -65,13 +65,13 @@ if logic.clientSock.recv(256)[:3] == '220':       # wait for service ready respo
         # clientSock.send(sentence)
 
         # recieve and print message received
-        echoSentence = logic.clientSock.recv(1024)
-        print 'Server Echo:', echoSentence
-        print ("")
+        # echoSentence = logic.clientSock.recv(1024)
+        # print 'Server Echo:', echoSentence
+        # print ("")
         
         # if server wishes to close the connection, close the socket
-        if echoSentence == 'Connection closed...':
-            break
+        # if echoSentence == 'Connection closed...':
+        #    break
 
     # close the socket
     logic.clientSock.close()

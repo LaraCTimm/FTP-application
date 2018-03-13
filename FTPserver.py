@@ -46,13 +46,13 @@ class clientThread(threading.Thread):
         threading.Thread.__init__(self)
         self.connSock = conn            # socket for command messages
         self.connAddr = addr            # IP address of connected client
-        self.baseDirectory = ''
+        self.baseDirectory = serverDirectory
         self.workingDirectory = '' #
         self.loggedIn = False
         self.username = ''
 
         self.dataPort = -1  # set in port and pasv
-        self.dataAddr = '' #
+        self.dataAddress = '' #
 
         # file containing usernames and passwords of people registered on server 
         passwordFile = open("userdata.txt", 'r')
@@ -146,26 +146,22 @@ class clientThread(threading.Thread):
         
     # def QUIT(self, command):
     #     # QUIT <CRLF>
+    #     self.connSock.send('221 Service closing control connection.\r\n')
 
     # # transfer parameter commands -----------------------------------
     def PORT(self, command): # ACTIVE MODE ###############
 
         if self.passive:
             self.passive = False
-            ##### dataSock.close()
+            self.passiveSocket.close()
 
         rec = command[5:].split(',')
-        self.dataAddr = '.'.join(rec[:4])
-        upperByte = int(rec[4])
-        lowerByte = int(rec[5])
-        self.dataPort = 256*upperByte + lowerByte
+        self.dataAddress = '.'.join(rec[:4])
+        byteU = int(rec[4])
+        byteL = int(rec[5])
+        self.dataPort = 256*byteU + byteL
 
         self.connSock.send('200 Command okay.\r\n')
-
-        # import socket
-        # s = socket.socket()
-        # s.bind(("127.0.0.1", 20))              # server details (locIP, locDataPort)
-        # s.connect(("321.12.131.432", 80))     # client details received from port
 
     def PASV(self, command): # PASSIVE MODE ###############
         # This command requests the server-DTP to "listen" on a data
@@ -175,34 +171,44 @@ class clientThread(threading.Thread):
         # host and port address this server is listening on.
         self.passive = True
 
-        
+        self.passiveSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.passiveSocket.bind((locIP, 0))     # binds to local IP and available port
+        ip, port = self.passiveSocket.getsockname()
+        self.passiveSocket.listen(1)
+        print 'connection opened',ip,':',port
 
-        self.passivePort = self.find_free_port()
+        byteU = int(port / 256)
+        byteL = int(port % 256)
         
-        print 'Available port:', self.passivePort
-        locIpChunks = locIP.split('.')
-        portChunk1 = int(self.passivePort / 256)
-        portChunk2 = self.passivePort % 256
-        connectionString = '(%s,%s,%s,%s,%i,%i)' % (locIpChunks[0], locIpChunks[1], \
-                locIpChunks[2], locIpChunks[3], portChunk1, portChunk2)
-        self.connSock.send('227 Entering passive mode '+ connectionString + '.\r\n')
+        # byteU = (port >> 8) & 0xff
+        # byteL = port & 0xff
 
-    def find_free_port(self):
-        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        sock.bind(('', 0))
-        return sock.getsockname()[1]
+        connectionString = '(%s,%i,%i)' % (','.join(locIP.split('.')), byteU, byteL)
+        print connectionString
+        self.connSock.send('227 Entering passive mode '+ connectionString +'.\r\n')
+
+        # locIpChunks = locIP.split('.')
+        # portChunk1 = int(self.passivePort / 256)
+        # portChunk2 = self.passivePort % 256
+        # connectionString = '(%s,%s,%s,%s,%i,%i)' % (locIpChunks[0], locIpChunks[1], \
+        #         locIpChunks[2], locIpChunks[3], portChunk1, portChunk2)
+        # self.connSock.send('227 Entering passive mode '+ connectionString + '.\r\n')
+
+        # def find_free_port(self):
+        #     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        #     sock.bind(('', 0))
+        #     return sock.getsockname()[1]
         
-
     def TYPE(self, command):
-    #     # TYPE <SP> <type-code> <CRLF>
-    #     # specifies representation type (ascii[D], ebcdic, image, 
-    #     #       local byte size)
+        # TYPE <SP> <type-code> <CRLF>
         fileType = command[5:]
 
         if fileType == 'I':
             self.binaryFile = True
+            self.connSock.send('200 Switching to Binary mode.\r\n')
         elif fileType == 'A':
             self.binaryFile = False
+            self.connSock.send('200 Switching to ASCII mode.\r\n')
         else:
             self.connSock.send('500 Syntax error, command unrecognized.\r\n')
 
@@ -217,7 +223,7 @@ class clientThread(threading.Thread):
     # # service commands -----------------------------------------------
 
     def LIST(self, command):
-    #if self.loggedIn:
+        #if self.loggedIn:
         pathname = command[5:]
         fileList = os.listdir(pathname)
         #print fileList
@@ -235,71 +241,100 @@ class clientThread(threading.Thread):
             print ''
     
 
-    # else:
-    #     self.connSock.send('530 Not logged in.')
+        # else:
+        #     self.connSock.send('530 Not logged in.')
+    
+    def open_dataSocket(self):
+        if self.passive:
+            self.dataSocket, addr = self.passiveSocket.accept()
+            print 'Data stream opened at address:', addr
+        else:
+            self.dataSocket = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
+            self.dataSocket.connect((self.dataAddress,self.dataPort))   # params retreived from PORT command
+            print 'Data stream opened at address: (\'%s\', %u)' % (self.dataAddress, self.dataPort)
+
+    def close_dataSocket(self):
+        if self.passive:
+            self.passiveSocket.close()
+        self.dataSocket.close()
 
     def RETR(self, command):
-    #     # RETR <SP> <pathname> <CRLF>
-    #     # transfer a copy file to client over data connection
-
+        # transfer a copy file to client 
         fileName = command[5:]
         filePath = os.path.join(self.workingDirectory, fileName)
-        # file_dir = Path(filePath)
         
-        if filePath.is_fil():
-            dataStreamSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        if os.path.exists(filePath):
+            # # if(fileName.find('.txt') or 
+            # #    fileName.find('.html') or 
+            # #    fileName.find('.pl') or 
+            # #    fileName.find('.cgi'))
 
-            if self.passive:
-                dataStreamSocket.bind(locIP, self.passivePort)
-                dataStreamSocket.listen(1)
-                dataStreamSocket, addr = dataStreamSocket.accept()
-                self.connSock.send('150 File status okay; about to open data connection.\r\n')
-
-            else:
-                dataStreamSocket.connect((self.internetAddr, self.port))
-
-            # if(fileName.find('.txt') or 
-            #    fileName.find('.html') or 
-            #    fileName.find('.pl') or 
-            #    fileName.find('.cgi'))
             requestedFile = None
-
             if self.binaryFile:
                 requestedFile = open(filePath,'rb')
-            else :
+            else:
                 requestedFile = open(filePath,'r')
+
+            self.connSock.send('150 Opening data connection.\r\n')
+            self.open_dataSocket()
 
             fileChunk = requestedFile.read(1024)
 
-            fileStat = os.stat(filePath)
-            fileSizeTotal = fileStat[ST_SIZE]
-            print 'Total file size:', fileSizeTotal
-
-            fileSizeSent = 0
-
-            while fileSizeSent < fileSizeTotal:
+            while fileChunk:
                 print 'Sending...'
-                dataStreamSocket.send(fileChunk)
-                fileSizeSent += len(fileChunk)
-                print 'File size sent:', fileSizeSent
+                self.dataSocket.send(fileChunk)
+                print 'test'
                 fileChunk = requestedFile.read(1024)
+            print 'test2'
+            requestedFile.close()
+            self.close_dataSocket()
+
+            #if fileSizeSent == fileSizeTotal:
+            self.connSock.send('226 Closing data connection. Requested file action successful.\r\n')
+            #else:
+            #    self.connSock.send('451 Requested action aborted: local error in processing.\r\n') 
+
+        else:
+            self.connSock.send('550 Requested action not taken. File unavailable.\r\n')
+
+
+    def STOR(self, command):
+        # STOR <SP> <pathname> <CRLF>
+        # accept data from data connection and store as file on server
+        fileName = command[5:]
+        filePath = os.path.join(self.workingDirectory, fileName)
+
+        if os.path.exists(filePath):
+            requestedFile = None
+            if self.binaryFile:
+                requestedFile = open(filePath, 'wb')
+            else:
+                requestedFile = open(filePath, 'w')
+            
+            self.connSock.send('150 Ok to send data.\r\n')
+            self.open_dataSocket()
+
+            fileChunk = self.dataSocket.recv(1024)
+            while (fileChunk):
+                print "Receiving..."
+                requestedFile.write(fileChunk)
+                fileChunk = self.dataSocket.recv(1024)
 
             requestedFile.close()
+            self.close_dataSocket
+            print "Done Receiving"
 
-            if fileSizeSent == fileSizeTotal:
-                self.connSock.send('226 Closing data connection. Requested file action successful.\r\n')
-            else:
-                self.connSock.send('451 Requested action aborted: local error in processing.\r\n') 
+            self.connSock.send('226 Closing data connection. Requested file action successful.\r\n')
 
-            dataStreamSocket.shutdown(socket.SHUT_WR)
+        
 
-    # def STOR(self, command):
-    #     # STOR <SP> <pathname> <CRLF>
-    #     # accept data from data connection and store as file on server
+
+        else: 
+            self.connSock.send('550 Requested action not taken. File unavailable.\r\n')
 
     def NOOP(self, command):
-    #     # NOOP <CRLF>
-    #     # server sends an okay reply
+        # NOOP <CRLF>
+        # server sends an okay reply
         self.connSock.send('200 Command okay.\r\n')
 
 #---------------------------------------------------------------------------
