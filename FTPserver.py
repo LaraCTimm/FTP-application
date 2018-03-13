@@ -44,30 +44,34 @@ class serverThread(threading.Thread):
 class clientThread(threading.Thread):
     def __init__(self, (conn, addr)):
         threading.Thread.__init__(self)
-        self.connSock = conn
-        self.connAddr = addr
+        self.connSock = conn            # socket for command messages
+        self.connAddr = addr            # IP address of connected client
         self.baseDirectory = ''
-        self.workingDirectory = ''
+        self.workingDirectory = '' #
         self.loggedIn = False
         self.username = ''
-        self.port = -1
-        self.internetAddr = ''
-        self.statClass = FileMode()
 
+        self.dataPort = -1  # set in port and pasv
+        self.dataAddr = '' #
+
+        # file containing usernames and passwords of people registered on server 
         passwordFile = open("userdata.txt", 'r')
         self.userData = passwordFile.readlines()
         passwordFile.close()
 
-        self.userRow = -1
-        self.passive = True
-        self.passivePort = None
-        self.binaryFile = False
+
+
+        self.statClass = FileMode() #
+        # self.userRow = -1   #
+        self.passive = True #
+        self.passivePort = None #
+        self.binaryFile = False #
 
     def run(self):
         self.connSock.send('220 Service ready for new user.\r\n')
         while 1:
             command = self.connSock.recv(256)
-            if not command:
+            if not command: 
                 break
             else:
                 print 'Recieved: ', command
@@ -78,35 +82,32 @@ class clientThread(threading.Thread):
                     print 'Error: ', err
                     self.connSock.send('500 Syntax error, command unrecognized.\r\n')
 
+
     # access control commands ---------------------------------------
     def USER(self, command):
         # USER <SP> <username> <CRLF>
-        # username - string
         
         # check if user is already registered
         self.username = command[5:]
         self.userRow = -1
+
         if self.username != '':
             for i in range(0, len(self.userData)):
-                print 'checking line: ', i
                 index = self.userData[i].find(self.username)
-                print index
+                
                 if index != -1:
                     self.userRow = i
                     break
+                    
             if self.userRow > -1:
-                print self.username
-                self.baseDirectory = os.path.join(serverDirectory, self.username)
-                print serverDirectory
-                print self.baseDirectory
-                user_dir = Path(self.baseDirectory)
-                print user_dir
-                print user_dir.is_dir()
+                self.baseDirectory = os.path.join(serverDirectory, self.username) 
+                user_dir = Path(self.baseDirectory)     # base directory for specific client
+
                 if user_dir.is_dir() == True:
                     self.connSock.send('331 User name okay, need password.\r\n')
                     return
                 else:
-                    self.user = ''
+                    self.username = ''
                     self.connSock.send('332 Need account for login. <directory not found>\r\n')
                     return
             else:
@@ -118,17 +119,16 @@ class clientThread(threading.Thread):
 
     def PASS(self, command):
         # PASS <SP> <password> <CRLF>
-        # password - string
 
         password = command[5:]
         if password != '' and password != ' ':
-            if self.username != '':
+            if self.username != '':                  # must have entered username to enter password
 
                 if self.userRow > -1:
-                    storedPassword = self.userData[self.userRow][-(len(password)+1):-1] #32 later if cd5 hash
+                    storedPassword = self.userData[self.userRow][-(len(password)+1):-1] 
+
                     if storedPassword == password:
                         self.loggedIn = True
-                        #self.baseDirectory = os.path.abspath('/'+self.username)
                         self.workingDirectory = self.baseDirectory
                         self.connSock.send('230 User logged in, proceed.\r\n')
                         return
@@ -139,34 +139,28 @@ class clientThread(threading.Thread):
                     self.connSock.send('332 Need account for login. <username not registered>\r\n')
                     return
             else:
-                self.connSock.send('332 Need account for login. <invalid username>\r\n')
+                self.connSock.send('332 Need account for login. <username not registered>\r\n')
                 return
         else:
             self.connSock.send('332 Need account for login. <invalid password>\r\n')
-            return
         
     # def QUIT(self, command):
     #     # QUIT <CRLF>
 
     # # transfer parameter commands -----------------------------------
     def PORT(self, command): # ACTIVE MODE ###############
-        # PORT <SP> <host-port> <CRLF>
-        # need to open new socket for transfer of data, transient, for sendin 
-        # "PORT h1,h2,h3,h4,p1,p2"
 
-        received = command[5:]
-        rec = received.split(',')
-        self.internetAddr = rec[0]+'.'+rec[1]+'.'+rec[2]+'.'+rec[3]
+        if self.passive:
+            self.passive = False
+            ##### dataSock.close()
 
+        rec = command[5:].split(',')
+        self.dataAddr = '.'.join(rec[:4])
         upperByte = int(rec[4])
         lowerByte = int(rec[5])
-        self.port = 256*upperByte + lowerByte
-
-        self.passive = False
+        self.dataPort = 256*upperByte + lowerByte
 
         self.connSock.send('200 Command okay.\r\n')
-
-        # data channel outbound from server
 
         # import socket
         # s = socket.socket()
@@ -174,25 +168,23 @@ class clientThread(threading.Thread):
         # s.connect(("321.12.131.432", 80))     # client details received from port
 
     def PASV(self, command): # PASSIVE MODE ###############
-        # PASV <CRLF>
-
         # This command requests the server-DTP to "listen" on a data
         # port (which is not its default data port) and to wait for a
         # connection rather than initiate one upon receipt of a
         # transfer command.  The response to this command includes the
         # host and port address this server is listening on.
-
-        # WS_FTP Server (by default) will open the first available TCP port 
-        # between 1024 and 5000. First available is defined as: check to see 
-        # if 1024 is available, if not, then check port 1025. If 1025 is not 
-        # available, check 1026
-        self.passivePort = self.find_free_port()
         self.passive = True
+
+        
+
+        self.passivePort = self.find_free_port()
+        
         print 'Available port:', self.passivePort
         locIpChunks = locIP.split('.')
         portChunk1 = int(self.passivePort / 256)
         portChunk2 = self.passivePort % 256
-        connectionString = '(%s,%s,%s,%s,%i,%i)' % (locIpChunks[0], locIpChunks[1], locIpChunks[2], locIpChunks[3], portChunk1, portChunk2)
+        connectionString = '(%s,%s,%s,%s,%i,%i)' % (locIpChunks[0], locIpChunks[1], \
+                locIpChunks[2], locIpChunks[3], portChunk1, portChunk2)
         self.connSock.send('227 Entering passive mode '+ connectionString + '.\r\n')
 
     def find_free_port(self):
