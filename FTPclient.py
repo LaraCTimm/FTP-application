@@ -5,10 +5,7 @@ import sys
 servIP = socket.gethostbyname(socket.gethostname())
 
 print servIP
-servPort = 10000
-
-
-
+servPort = 21
 
 clientSock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 clientSock.connect((servIP, servPort))

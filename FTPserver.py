@@ -3,6 +3,13 @@ import threading
 import os
 import sys
 from pathlib2 import Path
+import time
+from stat import * # ST_SIZE etc
+import stat
+#from utils import fileProperty
+from filemode_class import FileMode
+#from contextlib import closing
+
 
 import hashlib
 # mystring = input('Enter String to hash: ')
@@ -12,8 +19,8 @@ import hashlib
 
 locIP = socket.gethostbyname(socket.gethostname())
 # print loc_ip
-locPort = 10000
-currentDirectory = os.path.abspath('.')
+locPort = 21
+serverDirectory = os.path.abspath('./serverDirectory')
 #---------------------------------------------------------------------------
 
 class serverThread(threading.Thread):
@@ -43,20 +50,23 @@ class clientThread(threading.Thread):
         self.workingDirectory = ''
         self.loggedIn = False
         self.username = ''
+        self.port = -1
+        self.internetAddr = ''
+        self.statClass = FileMode()
 
         passwordFile = open("userdata.txt", 'r')
         self.userData = passwordFile.readlines()
         passwordFile.close()
 
         self.userRow = -1
+        self.passive = True
+        self.passivePort = None
+        self.binaryFile = False
 
     def run(self):
         self.connSock.send('220 Service ready for new user.\r\n')
         while 1:
             command = self.connSock.recv(256)
-            # print command
-            # self.connSock.send(command)
-
             if not command:
                 break
             else:
@@ -83,15 +93,16 @@ class clientThread(threading.Thread):
                 print index
                 if index != -1:
                     self.userRow = i
+                    break
             if self.userRow > -1:
                 print self.username
-                self.baseDirectory = os.path.join(currentDirectory, "serverDirectory" )
-                self.baseDirectory = os.path.join(self.baseDirectory, self.username)
-                print currentDirectory
+                self.baseDirectory = os.path.join(serverDirectory, self.username)
+                print serverDirectory
                 print self.baseDirectory
                 user_dir = Path(self.baseDirectory)
                 print user_dir
-                if user_dir.is_dir():
+                print user_dir.is_dir()
+                if user_dir.is_dir() == True:
                     self.connSock.send('331 User name okay, need password.\r\n')
                     return
                 else:
@@ -117,6 +128,8 @@ class clientThread(threading.Thread):
                     storedPassword = self.userData[self.userRow][-(len(password)+1):-1] #32 later if cd5 hash
                     if storedPassword == password:
                         self.loggedIn = True
+                        #self.baseDirectory = os.path.abspath('/'+self.username)
+                        self.workingDirectory = self.baseDirectory
                         self.connSock.send('230 User logged in, proceed.\r\n')
                         return
                     else:
@@ -136,16 +149,70 @@ class clientThread(threading.Thread):
     #     # QUIT <CRLF>
 
     # # transfer parameter commands -----------------------------------
-    # def PORT(self, command):
-    #     # PORT <SP> <host-port> <CRLF>
-    #     # host-post spec for data port to be used in data connection
-    #     # 32bit internet host address, 16bit port address
-    #     # "PORT h1,h2,h3,h4,p1,p2"
+    def PORT(self, command): # ACTIVE MODE ###############
+        # PORT <SP> <host-port> <CRLF>
+        # need to open new socket for transfer of data, transient, for sendin 
+        # "PORT h1,h2,h3,h4,p1,p2"
 
-    # def TYPE(self, command):
+        received = command[5:]
+        rec = received.split(',')
+        self.internetAddr = rec[0]+'.'+rec[1]+'.'+rec[2]+'.'+rec[3]
+
+        upperByte = int(rec[4])
+        lowerByte = int(rec[5])
+        self.port = 256*upperByte + lowerByte
+
+        self.passive = False
+
+        self.connSock.send('200 Command okay.\r\n')
+
+        # data channel outbound from server
+
+        # import socket
+        # s = socket.socket()
+        # s.bind(("127.0.0.1", 20))              # server details (locIP, locDataPort)
+        # s.connect(("321.12.131.432", 80))     # client details received from port
+
+    def PASV(self, command): # PASSIVE MODE ###############
+        # PASV <CRLF>
+
+        # This command requests the server-DTP to "listen" on a data
+        # port (which is not its default data port) and to wait for a
+        # connection rather than initiate one upon receipt of a
+        # transfer command.  The response to this command includes the
+        # host and port address this server is listening on.
+
+        # WS_FTP Server (by default) will open the first available TCP port 
+        # between 1024 and 5000. First available is defined as: check to see 
+        # if 1024 is available, if not, then check port 1025. If 1025 is not 
+        # available, check 1026
+        self.passivePort = self.find_free_port()
+        self.passive = True
+        print 'Available port:', self.passivePort
+        locIpChunks = locIP.split('.')
+        portChunk1 = int(self.passivePort / 256)
+        portChunk2 = self.passivePort % 256
+        connectionString = '(%s,%s,%s,%s,%i,%i)' % (locIpChunks[0], locIpChunks[1], locIpChunks[2], locIpChunks[3], portChunk1, portChunk2)
+        self.connSock.send('227 Entering passive mode '+ connectionString + '.\r\n')
+
+    def find_free_port(self):
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        sock.bind(('', 0))
+        return sock.getsockname()[1]
+        
+
+    def TYPE(self, command):
     #     # TYPE <SP> <type-code> <CRLF>
     #     # specifies representation type (ascii[D], ebcdic, image, 
     #     #       local byte size)
+        fileType = command[5:]
+
+        if fileType == 'I':
+            self.binaryFile = True
+        elif fileType == 'A':
+            self.binaryFile = False
+        else:
+            self.connSock.send('500 Syntax error, command unrecognized.\r\n')
 
     # def MODE(self, command):
     #     # MODE <SP> <mode-code> <CRLF>
@@ -156,22 +223,92 @@ class clientThread(threading.Thread):
     #     # specifies file structure (file[D], record, page)
 
     # # service commands -----------------------------------------------
-    # def RETR(self, command):
+
+    def LIST(self, command):
+    #if self.loggedIn:
+        pathname = command[5:]
+        fileList = os.listdir(pathname)
+        #print fileList
+
+        for i in range(0,len(fileList)):
+            st = os.stat(fileList[i])
+            print "mode:", self.statClass.filemode(st.st_mode)                  #rights
+            print "file ID:", st[ST_INO]                                        #file number
+            print "user ID:", st[ST_UID]                                        #userID
+            print "group ID:", st[ST_GID]                                       #groupID
+            print "file size:", st[ST_SIZE]                                     #file size
+            print "file modified:",time.strftime("%d %b %Y %H:%M" , time.localtime(st[ST_MTIME]))   #date
+            filename = fileList[i]+'\r\n'
+            print "file name:", filename                                        #file name
+            print ''
+    
+
+    # else:
+    #     self.connSock.send('530 Not logged in.')
+
+    def RETR(self, command):
     #     # RETR <SP> <pathname> <CRLF>
     #     # transfer a copy file to client over data connection
+
+        fileName = command[5:]
+        filePath = os.path.join(self.workingDirectory, fileName)
+        # file_dir = Path(filePath)
+        
+        if filePath.is_fil():
+            dataStreamSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+
+            if self.passive:
+                dataStreamSocket.bind(locIP, self.passivePort)
+                dataStreamSocket.listen(1)
+                dataStreamSocket, addr = dataStreamSocket.accept()
+                self.connSock.send('150 File status okay; about to open data connection.\r\n')
+
+            else:
+                dataStreamSocket.connect((self.internetAddr, self.port))
+
+            # if(fileName.find('.txt') or 
+            #    fileName.find('.html') or 
+            #    fileName.find('.pl') or 
+            #    fileName.find('.cgi'))
+            requestedFile = None
+
+            if self.binaryFile:
+                requestedFile = open(filePath,'rb')
+            else :
+                requestedFile = open(filePath,'r')
+
+            fileChunk = requestedFile.read(1024)
+
+            fileStat = os.stat(filePath)
+            fileSizeTotal = fileStat[ST_SIZE]
+            print 'Total file size:', fileSizeTotal
+
+            fileSizeSent = 0
+
+            while fileSizeSent < fileSizeTotal:
+                print 'Sending...'
+                dataStreamSocket.send(fileChunk)
+                fileSizeSent += len(fileChunk)
+                print 'File size sent:', fileSizeSent
+                fileChunk = requestedFile.read(1024)
+
+            requestedFile.close()
+
+            if fileSizeSent == fileSizeTotal:
+                self.connSock.send('226 Closing data connection. Requested file action successful.\r\n')
+            else:
+                self.connSock.send('451 Requested action aborted: local error in processing.\r\n') 
+
+            dataStreamSocket.shutdown(socket.SHUT_WR)
 
     # def STOR(self, command):
     #     # STOR <SP> <pathname> <CRLF>
     #     # accept data from data connection and store as file on server
 
-    # def NOOP(self, command):
+    def NOOP(self, command):
     #     # NOOP <CRLF>
     #     # server sends an okay reply
-    #     self.connSock.send('200 Command okay.\r\n')
-
-
-
-
+        self.connSock.send('200 Command okay.\r\n')
 
 #---------------------------------------------------------------------------
 # MAIN
@@ -184,8 +321,43 @@ if __name__ == '__main__':
     raw_input('Press Enter to end...\n')
     FTPconnection.closeSocket()
 
+# The following are the FTP commands:
 
-    
+# USER <SP> <username> <CRLF>
+# PASS <SP> <password> <CRLF>
+# ACCT <SP> <account-information> <CRLF>
+# CWD  <SP> <pathname> <CRLF>
+# CDUP <CRLF>
+# SMNT <SP> <pathname> <CRLF>
+# QUIT <CRLF>
+# REIN <CRLF>
+# PORT <SP> <host-port> <CRLF>
+# PASV <CRLF>
+# TYPE <SP> <type-code> <CRLF>
+# STRU <SP> <structure-code> <CRLF>
+# MODE <SP> <mode-code> <CRLF>
+# RETR <SP> <pathname> <CRLF>
+# STOR <SP> <pathname> <CRLF>
+# STOU <CRLF>
+# APPE <SP> <pathname> <CRLF>
+# ALLO <SP> <decimal-integer>
+#     [<SP> R <SP> <decimal-integer>] <CRLF>
+# REST <SP> <marker> <CRLF>
+# RNFR <SP> <pathname> <CRLF>
+# RNTO <SP> <pathname> <CRLF>
+# ABOR <CRLF>
+# DELE <SP> <pathname> <CRLF>
+# RMD  <SP> <pathname> <CRLF>
+# MKD  <SP> <pathname> <CRLF>
+# PWD  <CRLF>
+# LIST [<SP> <pathname>] <CRLF>
+# NLST [<SP> <pathname>] <CRLF>
+# SITE <SP> <string> <CRLF>
+# SYST <CRLF>
+# STAT [<SP> <pathname>] <CRLF>
+# HELP [<SP> <string>] <CRLF>
+# NOOP <CRLF>
+
 # <username> ::= <string>
 # <password> ::= <string>
 # <account-information> ::= <string>
@@ -210,3 +382,10 @@ if __name__ == '__main__':
 # <mode-code> ::= S | B | C
 # <pathname> ::= <string>
 # <decimal-integer> ::= any decimal integer
+
+# CDUP - Change to Parent Directory
+# RMD - Remove Directory
+# MKD - Make Directory
+# PWD - Print Directory
+#  LIST (LIST)
+# NAME LIST (NLST) ######

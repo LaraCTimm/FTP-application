@@ -8,3 +8,5 @@ user6 password6
 user7 password7
 user8 password8
 user9 password9
+LTimm lt
+SBerkowitz sb
