@@ -4,23 +4,13 @@ import os
 import sys
 from pathlib2 import Path
 import time
-from stat import * # ST_SIZE etc
+from stat import * 
 import stat
-#from utils import fileProperty
-from filemode_class import FileMode
-#from contextlib import closing
+#from filemode_class import FileMode
 
 from datetime import datetime
 
-
-import hashlib
-# mystring = input('Enter String to hash: ')
-# # Assumes the default UTF-8
-# hash_object = hashlib.md5(mystring.encode())
-# print(hash_object.hexdigest())
-
 locIP = socket.gethostbyname(socket.gethostname())
-# print loc_ip
 locPort = 21
 serverDirectory = os.path.abspath('./serverDirectory')
 #---------------------------------------------------------------------------
@@ -52,6 +42,8 @@ class clientThread(threading.Thread):
         self.workingDirectory = '' #
         self.loggedIn = False
         self.username = ''
+        self.passive = False #
+        self.binaryFile = False #
 
         self.dataPort = -1  # set in port and pasv
         self.dataAddress = '' #
@@ -60,14 +52,6 @@ class clientThread(threading.Thread):
         passwordFile = open("userdata.txt", 'r')
         self.userData = passwordFile.readlines()
         passwordFile.close()
-
-
-
-        self.statClass = FileMode() #
-        # self.userRow = -1   #
-        self.passive = False #
-        self.passivePort = None #
-        self.binaryFile = False #
 
     def run(self):
         self.connSock.send('220 Service ready for new user.\r\n')
@@ -81,14 +65,19 @@ class clientThread(threading.Thread):
                     action = getattr(self, command[:4].strip().upper())
                     action(command)
                 except Exception, err:
-                    print 'Error: ', err
-                    self.connSock.send('500 Syntax error, command unrecognized.\r\n')
+                    print 'Error:', err
+                    if err[0][:3] == '500':
+                        self.connSock.send('500 Syntax error, command unrecognized.\r\n')
+                    elif err[0][:3] == '530':
+                         self.connSock.send('530 Not logged in.\r\n')
+                    else:
+                        do = 'stuff'
 
 
-    # access control commands ---------------------------------------
+    # access control commands ---------------------------------------------------------------------------
+
     def USER(self, command):
-        # USER <SP> <username> <CRLF>
-        
+
         # check if user is already registered
         self.username = command[5:]
         self.userRow = -1
@@ -120,7 +109,6 @@ class clientThread(threading.Thread):
             return
 
     def PASS(self, command):
-        # PASS <SP> <password> <CRLF>
 
         password = command[5:]
         if password != '' and password != ' ':
@@ -145,13 +133,40 @@ class clientThread(threading.Thread):
                 return
         else:
             self.connSock.send('332 Need account for login. <invalid password>\r\n')
-        
+
+    def CWD(self, command):
+        self.checkLoggedIn()
+
+        newDirectory = os.path.join(self.workingDirectory, command[5:])
+
+        if os.path.exists(newDirectory):
+            self.workingDirectory = newDirectory
+            self.connSock.send('250 Requested action okay. Working directory changed.\r\n')
+        else:
+            self.connSock.send('550 Requested action not taken. Directory does not exist.\r\n')     
+    
+    def CDUP(self, command):
+        self.checkLoggedIn()
+
+        highestDirectory = os.path.join(serverDirectory, self.username)
+        if self.workingDirectory != highestDirectory:
+            self.workingDirectory = os.path.dirname(self.workingDirectory)
+            self.connSock.send('250 Requested action okay. Working directory changed.\r\n')
+        else:
+            self.connSock.send('550 Requested action not taken. Permission denied.\r\n')    
+    
     # def QUIT(self, command):
     #     # QUIT <CRLF>
     #     self.connSock.send('221 Service closing control connection.\r\n')
 
-    # # transfer parameter commands -----------------------------------
+    def checkLoggedIn(self):
+        if not self.loggedIn: 
+            raise Exception('530 Not logged in.')
+
+    # transfer parameter commands ----------------------------------------------------------------------
+
     def PORT(self, command): # ACTIVE MODE ###############
+        self.checkLoggedIn()
 
         if self.passive:
             self.passive = False
@@ -165,44 +180,25 @@ class clientThread(threading.Thread):
 
         self.connSock.send('200 Command okay.\r\n')
 
-    def PASV(self, command): # PASSIVE MODE ###############
-        # This command requests the server-DTP to "listen" on a data
-        # port (which is not its default data port) and to wait for a
-        # connection rather than initiate one upon receipt of a
-        # transfer command.  The response to this command includes the
-        # host and port address this server is listening on.
+    def PASV(self, command): # PASSIVE MODE ##############
+        
         self.passive = True
 
         self.passiveSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.passiveSocket.bind((locIP, 0))     # binds to local IP and available port
         ip, port = self.passiveSocket.getsockname()
         self.passiveSocket.listen(1)
-        print 'connection opened',ip,':',port
+        print 'Connection opened',ip,':',port
 
         byteU = int(port / 256)
         byteL = int(port % 256)
         
-        # byteU = (port >> 8) & 0xff
-        # byteL = port & 0xff
-
         connectionString = '(%s,%i,%i)' % (','.join(locIP.split('.')), byteU, byteL)
         print connectionString
         self.connSock.send('227 Entering passive mode '+ connectionString +'.\r\n')
 
-        # locIpChunks = locIP.split('.')
-        # portChunk1 = int(self.passivePort / 256)
-        # portChunk2 = self.passivePort % 256
-        # connectionString = '(%s,%s,%s,%s,%i,%i)' % (locIpChunks[0], locIpChunks[1], \
-        #         locIpChunks[2], locIpChunks[3], portChunk1, portChunk2)
-        # self.connSock.send('227 Entering passive mode '+ connectionString + '.\r\n')
-
-        # def find_free_port(self):
-        #     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        #     sock.bind(('', 0))
-        #     return sock.getsockname()[1]
-        
     def TYPE(self, command):
-        # TYPE <SP> <type-code> <CRLF>
+
         fileType = command[5:]
 
         if fileType == 'I':
@@ -212,83 +208,94 @@ class clientThread(threading.Thread):
             self.binaryFile = False
             self.connSock.send('200 Switching to ASCII mode.\r\n')
         else:
-            self.connSock.send('500 Syntax error, command unrecognized.\r\n')
+            raise Exception('500 Syntax error, command unrecognized.')
 
-    # def MODE(self, command):
-    #     # MODE <SP> <mode-code> <CRLF>
-    #     # specify data transfer mode (stream[D], block, compressed)
+    def STRU(self, command):
+        # specifies file structure (file[D], record, page)
+        structure = command[5:]
 
-    # def STRU(self, command):
-    #     # STRU <SP> <structure-code> <CRLF>
-    #     # specifies file structure (file[D], record, page)
-
-    # # service commands -----------------------------------------------
-
-    def LIST(self, command):
-        #if self.loggedIn:
-        # pathname = command[5:]
-        # fileList = os.listdir(pathname)
-        #print fileList
-
-        # for i in range(0,len(fileList)):
-        #     st = os.stat(fileList[i])
-        #     print "mode:", self.statClass.filemode(st.st_mode)                  #rights
-        #     print "file ID:", st[ST_INO]                                        #file number
-        #     print "user ID:", st[ST_UID]                                        #userID
-        #     print "group ID:", st[ST_GID]                                       #groupID
-        #     print "file size:", st[ST_SIZE]                                     #file size
-        #     print "file modified:",time.strftime("%d %b %Y %H:%M" , time.localtime(st[ST_MTIME]))   #date
-        #     filename = fileList[i]+'\r\n'
-        #     print "file name:", filename                                        #file name
-        #     print ''
-            
-        self.connSock.send('150 Opening data connection. Sending directory list.\r\n')    
-        self.open_dataSocket()
-
-        print self.workingDirectory
-
-        for item in os.listdir(self.workingDirectory):
-            itemString = self.createItemString(os.path.join(self.workingDirectory,item))
-            self.dataSocket.send(itemString + '\r\n')
-
-        self.close_dataSocket()
-        self.connSock.send('226 Closing data connection. Directory list sent.\r\n')
-
-        # else:
-        #     self.connSock.send('530 Not logged in.')
-
-    def createItemString(self, itemPath):
-        itemStat = os.stat(itemPath)
-        permissionString = 'rwxrwxrwx'
-        itemPermissions = ''
-        directoryChar = ''
-
-        for i in range(9):
-            if (itemStat.st_mode>>(8-i)) & 1:
-                itemPermissions += permissionString[i]
-            else:
-                itemPermissions += '-'
-            
-            # itemPermissions += ((itemStat.st_mode>>(8-i)) & 1) and permissionString[i] or '-'
-
-        if os.path.isdir(itemPath):
-            directoryChar = 'd'
+        if structure == 'F':
+            self.connSock.send('200 Switching to File structure mode.\r\n')
         else:
-            directoryChar = '-'
+            raise Exception('500 Syntax error, command unrecognized.')
 
-        # d = (os.path.isdir(itemPath)) and 'd' or '-'
+    def MODE(self, command):
+        # specify data transfer mode (stream[D], block, compressed)
+        mode = command[5:]
 
-        timestamp = time.strftime("%d %b %Y %H:%M" , time.localtime(itemStat[ST_MTIME]))
+        if mode == 'S':
+            self.connSock.send('200 Switching to Stream transfer mode.\r\n')
+        else:
+            raise Exception('500 Syntax error, command unrecognized.')
 
-        # ftime = time.strftime(' %b %d %H:%M ', time.gmtime(itemStat.st_mtime))
+    # service commands ---------------------------------------------------------------------------------
 
-        itemString = directoryChar + itemPermissions + ' ' + str(itemStat[ST_INO]) + ' ' + \
-                     str(itemStat[ST_UID]) + ' ' + str(itemStat[ST_GID]) + ' ' + \
-                     str(itemStat[ST_SIZE]) + ' ' + timestamp + ' ' + os.path.basename(itemPath)
-
-        # return d + itemPermissions + ' 1 user group ' + str(itemStat.st_size) + ftime + os.path.basename(itemPath)
+    def RETR(self, command):
+        # transfer a copy file to client 
+        self.checkLoggedIn()
     
-        return itemString
+        fileName = command[5:]
+        filePath = os.path.join(self.workingDirectory, fileName)
+        
+        if os.path.exists(filePath):
+            requestedFile = None
+            if self.binaryFile:
+                requestedFile = open(filePath,'rb')
+            else:
+                requestedFile = open(filePath,'r')
+
+            self.connSock.send('150 Opening data connection.\r\n')
+            try:
+                self.open_dataSocket()
+
+                fileChunk = requestedFile.read(1024)
+
+                while fileChunk:
+                    print 'Sending...'
+                    self.dataSocket.send(fileChunk)
+                    fileChunk = requestedFile.read(1024)
+            
+            except Exception, err:
+                self.connSock.send('451 Requested action aborted: local error in processing.\r\n')
+
+            requestedFile.close()
+            self.close_dataSocket()
+
+            self.connSock.send('226 Closing data connection. Requested file action successful.\r\n')
+        else:
+            self.connSock.send('550 Requested action not taken. File unavailable.\r\n')
+
+    def STOR(self, command):
+        # accept data from data connection and store as file on server
+        self.checkLoggedIn()
+    
+        fileName = command[5:]
+        filePath = os.path.join(self.workingDirectory, fileName)
+
+        requestedFile = None
+        if self.binaryFile:
+            requestedFile = open(filePath, 'wb')
+        else:
+            requestedFile = open(filePath, 'w')
+        
+        self.connSock.send('150 File status okay; about to open data connection.\r\n')
+
+        try:
+            self.open_dataSocket()
+
+            fileChunk = self.dataSocket.recv(1024)
+            while (fileChunk):
+                print "Receiving..."
+                requestedFile.write(fileChunk)
+                fileChunk = self.dataSocket.recv(1024)
+
+            requestedFile.close()
+            self.close_dataSocket
+            print "Done Receiving"
+            self.connSock.send('226 Closing data connection. Requested file action successful.\r\n')
+        
+        except Exception, err:
+            self.connSock.send('550 Requested action not taken. File transfer unsuccessful.\r\n')
 
     def open_dataSocket(self):
         #----PASSIVE-------------------------------------------------------
@@ -306,98 +313,63 @@ class clientThread(threading.Thread):
         if self.passive:
             self.passiveSocket.close()
         self.dataSocket.close()
-
-    def RETR(self, command):
-        # transfer a copy file to client 
-        if self.loggedIn:
-            fileName = command[5:]
-            filePath = os.path.join(self.workingDirectory, fileName)
-            
-            if os.path.exists(filePath):
-                requestedFile = None
-                if self.binaryFile:
-                    requestedFile = open(filePath,'rb')
-                else:
-                    requestedFile = open(filePath,'r')
-
-                self.connSock.send('150 Opening data connection.\r\n')
-                self.open_dataSocket()
-
-                fileChunk = requestedFile.read(1024)
-
-                while fileChunk:
-                    print 'Sending...'
-                    self.dataSocket.send(fileChunk)
-                    fileChunk = requestedFile.read(1024)
-
-                requestedFile.close()
-                self.close_dataSocket()
-
-                self.connSock.send('226 Closing data connection. Requested file action successful.\r\n')
-            else:
-                self.connSock.send('550 Requested action not taken. File unavailable.\r\n')
-        else:
-            self.connSock.send('530 Not logged in.\r\n')
-
-
-    def STOR(self, command):
-        # STOR <SP> <pathname> <CRLF>
-        # accept data from data connection and store as file on server
-        if self.loggedIn:
-            fileName = command[5:]
-            filePath = os.path.join(self.workingDirectory, fileName)
-
-            #if os.path.exists(filePath):
-            requestedFile = None
-            if self.binaryFile:
-                requestedFile = open(filePath, 'wb')
-            else:
-                requestedFile = open(filePath, 'w')
-            
-            self.connSock.send('150 File status okay; about to open data connection.\r\n')
-
-            try:
-                self.open_dataSocket()
-
-                fileChunk = self.dataSocket.recv(1024)
-                while (fileChunk):
-                    print "Receiving..."
-                    requestedFile.write(fileChunk)
-                    fileChunk = self.dataSocket.recv(1024)
-
-                requestedFile.close()
-                self.close_dataSocket
-                print "Done Receiving"
-                self.connSock.send('226 Closing data connection. Requested file action successful.\r\n')
-            
-            except Exception, err:
-                self.connSock.send('550 Requested action not taken. File unavailable.\r\n')
-        else:
-            self.connSock.send('532 Need account for storing files.\r\n')
-
-    def NOOP(self, command):
-        # NOOP <CRLF>
-        # server sends an okay reply
-        self.connSock.send('200 Command okay.\r\n')
-
-    def CWD(self, command):
-        newDirectory = command[5:]
-        self.workingDirectory = os.path.join(self.workingDirectory, newDirectory)
-        self.connSock.send('250 Requested action okay. Working directory changed.\r\n')
-
-    def CDUP(self, command):
-        self.workingDirectory = os.path.dirname(self.workingDirectory)
-        self.connSock.send('250 Requested action okay. Working directory changed.\r\n')
-
-    # def RMD(self, command):
-
-    # def MKD(self, command):
+    
+    # def DELE(self, command):
 
     def PWD(self, command):
-        # directories = self.workingDirectory.split('\\')
+        self.checkLoggedIn()
         self.connSock.send('257 \"%s\" is the working directory.\r\n' % (self.workingDirectory[len(serverDirectory):]))
 
-    # def DELE(self, command):
+    def LIST(self, command):
+        if self.loggedIn:
+
+            self.connSock.send('150 Opening data connection. Sending directory list.\r\n')    
+            self.open_dataSocket()
+
+            print self.workingDirectory
+
+            for item in os.listdir(self.workingDirectory):
+                itemString = self.createItemString(os.path.join(self.workingDirectory,item))
+                self.dataSocket.send(itemString + '\r\n')
+
+            self.close_dataSocket()
+            self.connSock.send('226 Closing data connection. Directory list sent.\r\n')
+
+        else:
+            self.connSock.send('530 Not logged in.')
+
+    def createItemString(self, itemPath):
+        itemStat = os.stat(itemPath)
+        permissionString = 'rwxrwxrwx'
+        itemPermissions = ''
+        directoryChar = ''
+
+        for i in range(9):
+            if (itemStat.st_mode>>(8-i)) & 1:
+                itemPermissions += permissionString[i]
+            else:
+                itemPermissions += '-'
+
+        if os.path.isdir(itemPath):
+            directoryChar = 'd'
+        else:
+            directoryChar = '-'
+
+        timestamp = time.strftime("%d %b %Y %H:%M" , time.localtime(itemStat[ST_MTIME]))
+
+        itemString = directoryChar + itemPermissions + ' ' + str(itemStat[ST_INO]) + ' ' + \
+                     str(itemStat[ST_UID]) + ' ' + str(itemStat[ST_GID]) + ' ' + \
+                     str(itemStat[ST_SIZE]) + ' ' + timestamp + ' ' + os.path.basename(itemPath)
+    
+        return itemString
+
+    # def MKD(self, command):
+    
+    # def RMD(self, command):
+        
+    def NOOP(self, command):
+        self.checkLoggedIn()
+        self.connSock.send('200 Command okay.\r\n')
 
 #---------------------------------------------------------------------------
 # MAIN
