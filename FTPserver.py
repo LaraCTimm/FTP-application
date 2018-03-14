@@ -60,7 +60,7 @@ class clientThread(threading.Thread):
             if not command: 
                 break
             else:
-                print 'Recieved: ', command
+                print 'Request:', command
                 try:
                     action = getattr(self, command[:4].strip().upper())
                     action(command)
@@ -178,7 +178,7 @@ class clientThread(threading.Thread):
         byteL = int(rec[5])
         self.dataPort = 256*byteU + byteL
 
-        self.connSock.send('200 Command okay.\r\n')
+        self.connSock.send('200 Port command successful.\r\n')
 
     def PASV(self, command): # PASSIVE MODE ##############
         
@@ -194,7 +194,6 @@ class clientThread(threading.Thread):
         byteL = int(port % 256)
         
         connectionString = '(%s,%i,%i)' % (','.join(locIP.split('.')), byteU, byteL)
-        print connectionString
         self.connSock.send('227 Entering passive mode '+ connectionString +'.\r\n')
 
     def TYPE(self, command):
@@ -305,7 +304,6 @@ class clientThread(threading.Thread):
         #----ACTIVE--------------------------------------------------------
         else:
             self.dataSocket = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
-            print str(datetime.now())
             self.dataSocket.connect((self.dataAddress,self.dataPort))   # params retreived from PORT command
             print 'Data stream opened at address: (\'%s\', %u)' % (self.dataAddress, self.dataPort)
 
@@ -327,14 +325,15 @@ class clientThread(threading.Thread):
             self.open_dataSocket()
 
             print self.workingDirectory
+            itemString = ''
 
             for item in os.listdir(self.workingDirectory):
-                itemString = self.createItemString(os.path.join(self.workingDirectory,item))
-                self.dataSocket.send(itemString + '\r\n')
+                itemString += self.createItemString(os.path.join(self.workingDirectory,item))
 
-            self.close_dataSocket()
+            self.dataSocket.send(itemString)
+            
             self.connSock.send('226 Closing data connection. Directory list sent.\r\n')
-
+            self.close_dataSocket()
         else:
             self.connSock.send('530 Not logged in.')
 
@@ -359,7 +358,8 @@ class clientThread(threading.Thread):
 
         itemString = directoryChar + itemPermissions + ' ' + str(itemStat[ST_INO]) + ' ' + \
                      str(itemStat[ST_UID]) + ' ' + str(itemStat[ST_GID]) + ' ' + \
-                     str(itemStat[ST_SIZE]) + ' ' + timestamp + ' ' + os.path.basename(itemPath)
+                     str(itemStat[ST_SIZE]) + ' ' + timestamp + ' ' + os.path.basename(itemPath) + ' \r\n'
+                     
     
         return itemString
 

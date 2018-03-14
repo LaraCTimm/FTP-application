@@ -19,9 +19,8 @@ class clientLogic():
         self.baseDirectory = os.path.abspath('./clientDirectory')
 
     def getReply(self):
-        print 'this is in getReply'
         echoSentence = self.clientSock.recv(1024)
-        print 'Server Echo:', echoSentence
+        print 'Response:', echoSentence
         print ("")
 
  # access control commands ---------------------------------------
@@ -62,26 +61,23 @@ class clientLogic():
         connectionString = '%s,%i,%i' % (','.join(IPChunks[:4]), byteU, byteL)
         self.passive = False
 
-        print connectionString
-
         self.activeSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.activeSocket.bind((ipAddr, port))
         self.activeSocket.listen(1)
-        print 'test1'
         self.clientSock.send('PORT '+connectionString)
-        print 'test2'
+
+        print 'Port connection opened at address %s:%u\n' % (ipAddr, port)
+
         self.getReply()
 
     def PASV(self):
         self.clientSock.send('PASV \r\n')
         reply = self.clientSock.recv(1024)
+        print 'Response:', reply
         openBracketIndex = reply.find('(')
-        print openBracketIndex
         closeBracketIndex = reply.find(')')
-        print closeBracketIndex
 
         connectionString = reply[openBracketIndex+1:-(len(reply) - closeBracketIndex)]
-        print connectionString
 
         rec = connectionString.split(',')
         self.passiveServerIP = '.'.join(rec[:4])
@@ -90,14 +86,13 @@ class clientLogic():
         byteL = int(rec[5])
         self.passiveServerPort = 256*byteU + byteL
 
-        print 'connecting to passive:', self.passiveServerIP, self.passiveServerPort
+        print 'Connecting to server address %s:%u\n' % (self.passiveServerIP, self.passiveServerPort)
 
         self.passive = True
 
     def TYPE(self, fileName):
         # TYPE <SP> <type-code> <CRLF>
-        # specifies representation type (ascii[D], ebcdic, image, 
-        #       local byte size)
+
         if fileName.find('.') != -1:
             if fileName.find('.txt') != -1 or \
                 fileName.find('.html') != -1 or \
@@ -109,12 +104,14 @@ class clientLogic():
                 self.binaryFile = True
                 self.clientSock.send('TYPE I')
         else:
+            print 'Specified type not recognised'
             return
         
         self.getReply()
 
     def STRU(self, structureCode):
         self.clientSock.send('STRU '+structureCode)
+        self.getReply()
 
     def MODE(self, transferMode):
         self.clientSock.send('MODE '+transferMode)
@@ -124,30 +121,11 @@ class clientLogic():
     # service commands -----------------------------------------------
 
     def RETR(self, fileName):
-        # transfer a copy file to client over data connection
+        # receive a copy file over data connection
     
         self.clientSock.send('RETR '+fileName)
 
-        if self.passive:
-            dataStreamSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM) 
-            reply = self.clientSock.recv(1024)
-            if reply[:3] == '150':
-                dataStreamSocket.connect((self.passiveServerIP, self.passiveServerPort))
-                print 'Data connection established'
-            else:
-                print 'Unable to open data connection'
-                print reply
-                return
-        else:
-            dataStreamSocket, addr = self.activeSocket.accept()
-            print str(datetime.now())
-            reply = self.clientSock.recv(1024)
-            if reply[:3] == '150':
-                print 'Data connection established'
-            else:
-                print 'Unable to open data connection'
-                print reply
-                return
+        self.open_dataSocket()
 
         filePath = os.path.join(self.baseDirectory, fileName)
         
@@ -156,20 +134,21 @@ class clientLogic():
         else :
             requestedFile = open(filePath,'w')
 
-        dataChunk = dataStreamSocket.recv(1024)
+        dataChunk = self.dataStreamSocket.recv(1024)
         while (dataChunk):
             print "Receiving..."
             requestedFile.write(dataChunk)
-            dataChunk = dataStreamSocket.recv(1024)
+            dataChunk = self.dataStreamSocket.recv(1024)
 
         requestedFile.close()
         print "Done Receiving"
+        self.dataStreamSocket.close()
 
         response = self.clientSock.recv(1024)
         print response
 
         if response[:3] == '226':
-            dataStreamSocket.shutdown(socket.SHUT_WR)
+            print 'successful'
         elif response[:3] == '451' or response[:3] == '550':
             print 'File trainsfer failed'
             if os.path.exists(filePath):
@@ -178,8 +157,8 @@ class clientLogic():
             print 'Unknown transfer error occured'
 
     def STOR(self, fileName):
-        # STOR <SP> <pathname> <CRLF>
-        # accept data from data connection and store as file on server
+        
+        # send data across data connection to store as file on server
         filePath = os.path.join(self.baseDirectory, fileName)
 
         if os.path.exists(filePath):
@@ -188,28 +167,7 @@ class clientLogic():
             print 'File not found'
             return
 
-        dataStreamSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-
-        if self.passive: 
-            reply = self.clientSock.recv(1024)
-            if reply[:3] == '150':
-                dataStreamSocket.connect((self.passiveServerIP, self.passiveServerPort))
-                print 'Data connection established'
-            else:
-                print 'Unable to open data connection'
-                print reply
-                return
-        else:
-            dataStreamSocket, addr = self.activeSocket.accept()
-            print str(datetime.now())
-            reply = self.clientSock.recv(1024)
-            if reply[:3] == '150':
-                print 'Data connection established'
-            # reply = self.clientSock.recv(1024)
-            else:
-                print 'Unable to open data connection'
-                print reply
-                return
+        self.open_dataSocket()
         
         if self.binaryFile:
             requestedFile = open(filePath,'rb')
@@ -220,19 +178,37 @@ class clientLogic():
 
         while fileChunk:
             print 'Sending...'
-            dataStreamSocket.send(fileChunk)
+            self.dataStreamSocket.send(fileChunk)
             fileChunk = requestedFile.read(1024)
 
         requestedFile.close()
-        dataStreamSocket.shutdown(socket.SHUT_WR)
+        self.dataStreamSocket.shutdown(socket.SHUT_WR)
 
         print "Done Sending"
 
         response = self.clientSock.recv(1024)
         print response
 
-    
+    def open_dataSocket(self):
 
+        if self.passive:
+            self.dataStreamSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM) 
+            reply = self.clientSock.recv(1024)
+            print 'Response:', reply 
+            if reply[:3] == '150':
+                self.dataStreamSocket.connect((self.passiveServerIP, self.passiveServerPort))
+            else:
+                return
+        else:
+            reply = self.clientSock.recv(1024)
+            print 'Response:', reply 
+            self.dataStreamSocket, addr = self.activeSocket.accept()
+    
+    def close_dataSocket(self):
+        if self.passive == False:
+            self.activeSocket.close()
+        self.dataStreamSocket.close()
+    
     def PWD(self):
         self.clientSock.send('PWD \r\n')
         self.getReply()
@@ -240,49 +216,29 @@ class clientLogic():
     def LIST(self):
         self.clientSock.send('LIST \r\n')
 
-        if self.passive:
-            dataStreamSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM) 
-            reply = self.clientSock.recv(1024)
-            if reply[:3] == '150':
-                dataStreamSocket.connect((self.passiveServerIP, self.passiveServerPort))
-                print 'Data connection established'
-            else:
-                print 'Unable to open data connection'
-                print reply
-                return
-        else:
-            dataStreamSocket, addr = self.activeSocket.accept()
-            print str(datetime.now())
-            reply = self.clientSock.recv(1024)
-            if reply[:3] == '150':
-                print 'Data connection established'
-            # reply = self.clientSock.recv(1024)
-            else:
-                print 'Unable to open data connection'
-                print reply
-                return
+        self.open_dataSocket()
 
         directoryArray = [] 
-        itemIndex = 0
-        directoryItem = dataStreamSocket.recv(1024)
+        directoryItem = self.dataStreamSocket.recv(1024)
+        directories = ''
 
         while (directoryItem):
-            if len(directoryItem) > 40:
-                print directoryItem
-                directoryArray.append(directoryItem)
-                itemIndex += 1
-            directoryItem = dataStreamSocket.recv(1024)
+            directories += directoryItem
+            directoryItem = self.dataStreamSocket.recv(1024)
             
+        directoryArray = directories.split('\n')
+        for i in range(0,len(directoryArray)):
+            print directoryArray[i]
+            if directoryArray[i].strip() == '':
+                del directoryArray[i]
+            
+        print 'Number of items in directory:',len(directoryArray)
         print "Done Receiving"
 
-        response = self.clientSock.recv(1024)
-        print response
+        if len(directoryArray) == 0:
+            print 'Directory empty...'
 
-        if response[:3] == '226':
-            dataStreamSocket.shutdown(socket.SHUT_WR)
-            print 'SHUTDOWN'
-        else:
-            print 'Directory listing failed'
+        self.getReply()
     
     def NOOP(self):
         self.clientSock.send('NOOP\r\n')
