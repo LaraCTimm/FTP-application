@@ -31,6 +31,7 @@ if logic.clientSock.recv(256)[:3] == '220':       # wait for service ready respo
 
             elif functionName == 'QUIT':
                 logic.QUIT()
+                break
 
             elif functionName == 'PORT':
                 sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -69,6 +70,16 @@ if logic.clientSock.recv(256)[:3] == '220':       # wait for service ready respo
 
             elif functionName == 'PWD':
                 logic.PWD()
+
+            elif functionName == 'DELE':
+                logic.DELE(sentence[5:])
+
+            elif functionName == 'MKD':
+                logic.MKD(sentence[4:])
+
+            elif functionName == 'RMD':
+                logic.RMD(sentence[4:])
+                
             else:
                 raise Exception('Command not found')
         except Exception, err:

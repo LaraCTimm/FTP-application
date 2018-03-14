@@ -6,6 +6,7 @@ from pathlib2 import Path
 import time
 from stat import * 
 import stat
+import shutil
 #from filemode_class import FileMode
 
 from datetime import datetime
@@ -36,6 +37,7 @@ class serverThread(threading.Thread):
 class clientThread(threading.Thread):
     def __init__(self, (conn, addr)):
         threading.Thread.__init__(self)
+        print 'Client connected...'
         self.connSock = conn            # socket for command messages
         self.connAddr = addr            # IP address of connected client
         self.baseDirectory = serverDirectory
@@ -70,6 +72,11 @@ class clientThread(threading.Thread):
                         self.connSock.send('500 Syntax error, command unrecognized.\r\n')
                     elif err[0][:3] == '530':
                          self.connSock.send('530 Not logged in.\r\n')
+                    elif err[0][:3] == '221':
+                        self.connSock.send('221 Service closing control connection.\r\n')
+                        self.connSock.close()
+                        print 'Client disconnected...'
+                        break
                     else:
                         do = 'stuff'
 
@@ -155,9 +162,9 @@ class clientThread(threading.Thread):
         else:
             self.connSock.send('550 Requested action not taken. Permission denied.\r\n')    
     
-    # def QUIT(self, command):
-    #     # QUIT <CRLF>
-    #     self.connSock.send('221 Service closing control connection.\r\n')
+    def QUIT(self, command):
+        # QUIT <CRLF>
+        raise Exception('221 Service closing control connection.')
 
     def checkLoggedIn(self):
         if not self.loggedIn: 
@@ -312,7 +319,17 @@ class clientThread(threading.Thread):
             self.passiveSocket.close()
         self.dataSocket.close()
     
-    # def DELE(self, command):
+    def DELE(self, command):
+        self.checkLoggedIn()
+
+        filePath = os.path.join(self.workingDirectory, command[5:])
+        if os.path.isfile(filePath):
+            os.remove(filePath)
+            self.connSock.send('250 Requested file action okay, file deleted.\r\n')
+        elif os.path.isdir(filePath):
+            self.connSock.send('550 Requested action not taken. To delete directory use RMD.\r\n')
+        else:
+            self.connSock.send('550 Requested action not taken. File does not exist.\r\n')
 
     def PWD(self, command):
         self.checkLoggedIn()
@@ -324,7 +341,7 @@ class clientThread(threading.Thread):
             self.connSock.send('150 Opening data connection. Sending directory list.\r\n')    
             self.open_dataSocket()
 
-            print self.workingDirectory
+            # print self.workingDirectory
             itemString = ''
 
             for item in os.listdir(self.workingDirectory):
@@ -363,10 +380,32 @@ class clientThread(threading.Thread):
     
         return itemString
 
-    # def MKD(self, command):
-    
-    # def RMD(self, command):
-        
+    def MKD(self, command):
+        self.checkLoggedIn()
+
+        dirPath = os.path.join(self.workingDirectory, command[5:])
+        if not os.path.exists(dirPath):
+            os.makedirs(dirPath)
+            self.connSock.send('257 \"%s\\%s\" created.\r\n'\
+                    % (self.workingDirectory[len(serverDirectory):],command[5:]))
+        else:
+            self.connSock.send('550 Requested action not taken. \"%s\\%s\" already exists.\r\n'\
+                    % (self.workingDirectory[len(serverDirectory):],command[5:]) )
+            
+    def RMD(self, command):
+        self.checkLoggedIn()
+        if command[5:] != '':
+            dirPath = os.path.join(self.workingDirectory, command[5:])
+            if os.path.isdir(dirPath):
+                shutil.rmtree(dirPath)
+                self.connSock.send('250 Requested file action okay, directory deleted.\r\n')
+            elif os.path.isfile(dirPath):
+                self.connSock.send('550 Requested action not taken. To delete file use DELE\r\n')
+            else:
+                self.connSock.send('550 Requested action not taken. Directory does not exist.\r\n')
+        else:
+            self.connSock.send('550 Requested action not taken. Permission denied.\r\n')
+
     def NOOP(self, command):
         self.checkLoggedIn()
         self.connSock.send('200 Command okay.\r\n')

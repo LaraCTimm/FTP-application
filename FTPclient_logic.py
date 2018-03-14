@@ -19,9 +19,12 @@ class clientLogic():
         self.baseDirectory = os.path.abspath('./clientDirectory')
 
     def getReply(self):
-        echoSentence = self.clientSock.recv(1024)
-        print 'Response:', echoSentence
+        reply = self.clientSock.recv(1024)
+        print 'Response:', reply
         print ("")
+        
+        if reply[:2] == '221':
+            self.clientSock.close()
 
  # access control commands ---------------------------------------
 
@@ -53,7 +56,6 @@ class clientLogic():
     # transfer parameter commands -----------------------------------
 
     def PORT(self, ipAddr, port):
-
         IPChunks = ipAddr.split('.')
         byteU = int(port / 256)
         byteL = port % 256
@@ -128,7 +130,7 @@ class clientLogic():
         self.open_dataSocket()
 
         filePath = os.path.join(self.baseDirectory, fileName)
-        
+        # 
         if self.binaryFile:
             requestedFile = open(filePath,'wb')
         else :
@@ -148,7 +150,7 @@ class clientLogic():
         print response
 
         if response[:3] == '226':
-            print 'successful'
+            return
         elif response[:3] == '451' or response[:3] == '550':
             print 'File trainsfer failed'
             if os.path.exists(filePath):
@@ -209,6 +211,10 @@ class clientLogic():
             self.activeSocket.close()
         self.dataStreamSocket.close()
     
+    def DELE(self, fileName):
+        self.clientSock.send('DELE ' + fileName)
+        self.getReply()
+    
     def PWD(self):
         self.clientSock.send('PWD \r\n')
         self.getReply()
@@ -238,6 +244,23 @@ class clientLogic():
         if len(directoryArray) == 0:
             print 'Directory empty...'
 
+        self.getReply()
+    
+    def MKD(self, dirName):
+        self.clientSock.send('MKD  ' + dirName)
+        self.getReply()
+    
+    def RMD(self, dirName):
+        # response = raw_input('You are about to remove a directory and all its contents.\nAre you syre you want to proceed? (y/n): ')
+        # if response == 'y':
+        #     self.clientSock.send('RMD  ' + dirName)
+        #     self.getReply()
+        # elif response == 'n':
+        #     return
+        # else:
+        #     print 'Invalid response.'
+
+        self.clientSock.send('RMD  ' + dirName)
         self.getReply()
     
     def NOOP(self):
