@@ -29,14 +29,10 @@ class clientLogic():
  # access control commands ---------------------------------------
 
     def USER(self, username):
-        # USER <SP> <username> <CRLF>
-        # username - string
         self.clientSock.send('USER '+username)
         self.getReply()
 
     def PASS(self, password):
-        # PASS <SP> <password> <CRLF>
-        # password - string
         self.clientSock.send('PASS '+password)
         self.getReply()
 
@@ -49,7 +45,6 @@ class clientLogic():
         self.getReply()
 
     def QUIT(self):
-        # QUIT <CRLF>
         self.clientSock.send('QUIT \r\n')
         self.getReply()
 
@@ -93,7 +88,6 @@ class clientLogic():
         self.passive = True
 
     def TYPE(self, fileName):
-        # TYPE <SP> <type-code> <CRLF>
 
         if fileName.find('.') != -1:
             if fileName.find('.txt') != -1 or \
@@ -119,7 +113,6 @@ class clientLogic():
         self.clientSock.send('MODE '+transferMode)
         self.getReply()
 
-    
     # service commands -----------------------------------------------
 
     def RETR(self, fileName):
