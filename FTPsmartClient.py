@@ -49,6 +49,9 @@ if logic.clientSock.recv(256)[:3] == '220':       # wait for service ready respo
             elif functionName == 'STRU':
                 logic.STRU(sentence[5:])
 
+            elif functionName == 'LIST':
+                logic.LIST()
+
             elif functionName == 'RETR':
                 logic.RETR(sentence[5:])
 
@@ -57,6 +60,15 @@ if logic.clientSock.recv(256)[:3] == '220':       # wait for service ready respo
 
             elif functionName == 'NOOP':
                 logic.NOOP()
+
+            elif functionName == 'CWD':
+                logic.CWD(sentence[4:])
+
+            elif functionName == 'CDUP':
+                logic.CDUP()
+
+            elif functionName == 'PWD':
+                logic.PWD()
             else:
                 raise Exception('Command not found')
         except Exception, err:

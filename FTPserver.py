@@ -10,6 +10,8 @@ import stat
 from filemode_class import FileMode
 #from contextlib import closing
 
+from datetime import datetime
+
 
 import hashlib
 # mystring = input('Enter String to hash: ')
@@ -63,7 +65,7 @@ class clientThread(threading.Thread):
 
         self.statClass = FileMode() #
         # self.userRow = -1   #
-        self.passive = True #
+        self.passive = False #
         self.passivePort = None #
         self.binaryFile = False #
 
@@ -224,32 +226,79 @@ class clientThread(threading.Thread):
 
     def LIST(self, command):
         #if self.loggedIn:
-        pathname = command[5:]
-        fileList = os.listdir(pathname)
+        # pathname = command[5:]
+        # fileList = os.listdir(pathname)
         #print fileList
 
-        for i in range(0,len(fileList)):
-            st = os.stat(fileList[i])
-            print "mode:", self.statClass.filemode(st.st_mode)                  #rights
-            print "file ID:", st[ST_INO]                                        #file number
-            print "user ID:", st[ST_UID]                                        #userID
-            print "group ID:", st[ST_GID]                                       #groupID
-            print "file size:", st[ST_SIZE]                                     #file size
-            print "file modified:",time.strftime("%d %b %Y %H:%M" , time.localtime(st[ST_MTIME]))   #date
-            filename = fileList[i]+'\r\n'
-            print "file name:", filename                                        #file name
-            print ''
-    
+        # for i in range(0,len(fileList)):
+        #     st = os.stat(fileList[i])
+        #     print "mode:", self.statClass.filemode(st.st_mode)                  #rights
+        #     print "file ID:", st[ST_INO]                                        #file number
+        #     print "user ID:", st[ST_UID]                                        #userID
+        #     print "group ID:", st[ST_GID]                                       #groupID
+        #     print "file size:", st[ST_SIZE]                                     #file size
+        #     print "file modified:",time.strftime("%d %b %Y %H:%M" , time.localtime(st[ST_MTIME]))   #date
+        #     filename = fileList[i]+'\r\n'
+        #     print "file name:", filename                                        #file name
+        #     print ''
+            
+        self.connSock.send('150 Opening data connection. Sending directory list.\r\n')    
+        self.open_dataSocket()
+
+        print self.workingDirectory
+
+        for item in os.listdir(self.workingDirectory):
+            itemString = self.createItemString(os.path.join(self.workingDirectory,item))
+            self.dataSocket.send(itemString + '\r\n')
+
+        self.close_dataSocket()
+        self.connSock.send('226 Closing data connection. Directory list sent.\r\n')
 
         # else:
         #     self.connSock.send('530 Not logged in.')
+
+    def createItemString(self, itemPath):
+        itemStat = os.stat(itemPath)
+        permissionString = 'rwxrwxrwx'
+        itemPermissions = ''
+        directoryChar = ''
+
+        for i in range(9):
+            if (itemStat.st_mode>>(8-i)) & 1:
+                itemPermissions += permissionString[i]
+            else:
+                itemPermissions += '-'
+            
+            # itemPermissions += ((itemStat.st_mode>>(8-i)) & 1) and permissionString[i] or '-'
+
+        if os.path.isdir(itemPath):
+            directoryChar = 'd'
+        else:
+            directoryChar = '-'
+
+        # d = (os.path.isdir(itemPath)) and 'd' or '-'
+
+        timestamp = time.strftime("%d %b %Y %H:%M" , time.localtime(itemStat[ST_MTIME]))
+
+        # ftime = time.strftime(' %b %d %H:%M ', time.gmtime(itemStat.st_mtime))
+
+        itemString = directoryChar + itemPermissions + ' ' + str(itemStat[ST_INO]) + ' ' + \
+                     str(itemStat[ST_UID]) + ' ' + str(itemStat[ST_GID]) + ' ' + \
+                     str(itemStat[ST_SIZE]) + ' ' + timestamp + ' ' + os.path.basename(itemPath)
+
+        # return d + itemPermissions + ' 1 user group ' + str(itemStat.st_size) + ftime + os.path.basename(itemPath)
     
+        return itemString
+
     def open_dataSocket(self):
+        #----PASSIVE-------------------------------------------------------
         if self.passive:
             self.dataSocket, addr = self.passiveSocket.accept()
             print 'Data stream opened at address:', addr
+        #----ACTIVE--------------------------------------------------------
         else:
             self.dataSocket = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
+            print str(datetime.now())
             self.dataSocket.connect((self.dataAddress,self.dataPort))   # params retreived from PORT command
             print 'Data stream opened at address: (\'%s\', %u)' % (self.dataAddress, self.dataPort)
 
@@ -260,82 +309,95 @@ class clientThread(threading.Thread):
 
     def RETR(self, command):
         # transfer a copy file to client 
-        fileName = command[5:]
-        filePath = os.path.join(self.workingDirectory, fileName)
-        
-        if os.path.exists(filePath):
-            # # if(fileName.find('.txt') or 
-            # #    fileName.find('.html') or 
-            # #    fileName.find('.pl') or 
-            # #    fileName.find('.cgi'))
+        if self.loggedIn:
+            fileName = command[5:]
+            filePath = os.path.join(self.workingDirectory, fileName)
+            
+            if os.path.exists(filePath):
+                requestedFile = None
+                if self.binaryFile:
+                    requestedFile = open(filePath,'rb')
+                else:
+                    requestedFile = open(filePath,'r')
 
-            requestedFile = None
-            if self.binaryFile:
-                requestedFile = open(filePath,'rb')
-            else:
-                requestedFile = open(filePath,'r')
+                self.connSock.send('150 Opening data connection.\r\n')
+                self.open_dataSocket()
 
-            self.connSock.send('150 Opening data connection.\r\n')
-            self.open_dataSocket()
-
-            fileChunk = requestedFile.read(1024)
-
-            while fileChunk:
-                print 'Sending...'
-                self.dataSocket.send(fileChunk)
-                print 'test'
                 fileChunk = requestedFile.read(1024)
-            print 'test2'
-            requestedFile.close()
-            self.close_dataSocket()
 
-            #if fileSizeSent == fileSizeTotal:
-            self.connSock.send('226 Closing data connection. Requested file action successful.\r\n')
-            #else:
-            #    self.connSock.send('451 Requested action aborted: local error in processing.\r\n') 
+                while fileChunk:
+                    print 'Sending...'
+                    self.dataSocket.send(fileChunk)
+                    fileChunk = requestedFile.read(1024)
 
+                requestedFile.close()
+                self.close_dataSocket()
+
+                self.connSock.send('226 Closing data connection. Requested file action successful.\r\n')
+            else:
+                self.connSock.send('550 Requested action not taken. File unavailable.\r\n')
         else:
-            self.connSock.send('550 Requested action not taken. File unavailable.\r\n')
+            self.connSock.send('530 Not logged in.\r\n')
 
 
     def STOR(self, command):
         # STOR <SP> <pathname> <CRLF>
         # accept data from data connection and store as file on server
-        fileName = command[5:]
-        filePath = os.path.join(self.workingDirectory, fileName)
+        if self.loggedIn:
+            fileName = command[5:]
+            filePath = os.path.join(self.workingDirectory, fileName)
 
-        if os.path.exists(filePath):
+            #if os.path.exists(filePath):
             requestedFile = None
             if self.binaryFile:
                 requestedFile = open(filePath, 'wb')
             else:
                 requestedFile = open(filePath, 'w')
             
-            self.connSock.send('150 Ok to send data.\r\n')
-            self.open_dataSocket()
+            self.connSock.send('150 File status okay; about to open data connection.\r\n')
 
-            fileChunk = self.dataSocket.recv(1024)
-            while (fileChunk):
-                print "Receiving..."
-                requestedFile.write(fileChunk)
+            try:
+                self.open_dataSocket()
+
                 fileChunk = self.dataSocket.recv(1024)
+                while (fileChunk):
+                    print "Receiving..."
+                    requestedFile.write(fileChunk)
+                    fileChunk = self.dataSocket.recv(1024)
 
-            requestedFile.close()
-            self.close_dataSocket
-            print "Done Receiving"
-
-            self.connSock.send('226 Closing data connection. Requested file action successful.\r\n')
-
-        
-
-
-        else: 
-            self.connSock.send('550 Requested action not taken. File unavailable.\r\n')
+                requestedFile.close()
+                self.close_dataSocket
+                print "Done Receiving"
+                self.connSock.send('226 Closing data connection. Requested file action successful.\r\n')
+            
+            except Exception, err:
+                self.connSock.send('550 Requested action not taken. File unavailable.\r\n')
+        else:
+            self.connSock.send('532 Need account for storing files.\r\n')
 
     def NOOP(self, command):
         # NOOP <CRLF>
         # server sends an okay reply
         self.connSock.send('200 Command okay.\r\n')
+
+    def CWD(self, command):
+        newDirectory = command[5:]
+        self.workingDirectory = os.path.join(self.workingDirectory, newDirectory)
+        self.connSock.send('250 Requested action okay. Working directory changed.\r\n')
+
+    def CDUP(self, command):
+        self.workingDirectory = os.path.dirname(self.workingDirectory)
+        self.connSock.send('250 Requested action okay. Working directory changed.\r\n')
+
+    # def RMD(self, command):
+
+    # def MKD(self, command):
+
+    def PWD(self, command):
+        # directories = self.workingDirectory.split('\\')
+        self.connSock.send('257 \"%s\" is the working directory.\r\n' % (self.workingDirectory[len(serverDirectory):]))
+
+    # def DELE(self, command):
 
 #---------------------------------------------------------------------------
 # MAIN
