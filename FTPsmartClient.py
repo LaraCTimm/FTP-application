@@ -5,10 +5,7 @@ from FTPclient_logic import clientLogic
 #servIP = socket.gethostbyname(sys.argv[1])
 servIP = socket.gethostbyname(socket.gethostname())
 
-print servIP
-servPort = 21
-
-logic = clientLogic()
+logic = clientLogic(servIP)
 
 if logic.clientSock.recv(256)[:3] == '220':       # wait for service ready response
 
@@ -75,6 +72,10 @@ if logic.clientSock.recv(256)[:3] == '220':       # wait for service ready respo
 
             elif functionName == 'NOOP':
                 logic.NOOP()
+
+            elif functionName == 'AUTH':
+                logic.clientSock.send('AUTH TLS')
+                #logic.getReply()
             
             else:
                 raise Exception('Command not found')

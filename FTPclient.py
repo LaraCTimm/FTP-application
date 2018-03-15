@@ -1,8 +1,8 @@
 import socket
 import sys
 
-#servIP = socket.gethostbyname(sys.argv[1])
-servIP = socket.gethostbyname(socket.gethostname())
+servIP = socket.gethostbyname(sys.argv[1])
+#servIP = socket.gethostbyname(socket.gethostname())
 
 print servIP
 servPort = 21

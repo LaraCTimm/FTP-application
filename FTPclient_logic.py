@@ -4,11 +4,9 @@ import os
 from datetime import datetime
 
 class clientLogic():
-    def __init__(self):
-        
-        #servIP = socket.gethostbyname(sys.argv[1])
+    def __init__(self, servIP):
         self.locIP = socket.gethostbyname(socket.gethostname())
-        self.servIP = self.locIP
+        self.servIP = servIP
         self.servPort = 21
         self.clientSock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.clientSock.connect((self.servIP, self.servPort))
@@ -29,15 +27,15 @@ class clientLogic():
  # access control commands ---------------------------------------
 
     def USER(self, username):
-        self.clientSock.send('USER '+username)
+        self.clientSock.send('USER '+username + '\r\n')
         self.getReply()
 
     def PASS(self, password):
-        self.clientSock.send('PASS '+password)
+        self.clientSock.send('PASS '+password + '\r\n')
         self.getReply()
 
     def CWD(self, directory):
-        self.clientSock.send('CWD  ' + directory)
+        self.clientSock.send('CWD ' + directory + '\r\n')
         self.getReply()
     
     def CDUP(self):
@@ -45,7 +43,7 @@ class clientLogic():
         self.getReply()
 
     def QUIT(self):
-        self.clientSock.send('QUIT \r\n')
+        self.clientSock.send('QUIT\r\n')
         self.getReply()
 
     # transfer parameter commands -----------------------------------
@@ -61,21 +59,21 @@ class clientLogic():
         self.activeSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.activeSocket.bind((ipAddr, port))
         self.activeSocket.listen(1)
-        self.clientSock.send('PORT '+connectionString)
+        self.clientSock.send('PORT '+connectionString +'\r\n')
 
         print 'Port connection opened at address %s:%u\n' % (ipAddr, port)
 
         self.getReply()
 
     def PASV(self):
-        self.clientSock.send('PASV \r\n')
+        self.clientSock.send('PASV\r\n')
         reply = self.clientSock.recv(1024)
         print 'Response:', reply
         openBracketIndex = reply.find('(')
         closeBracketIndex = reply.find(')')
 
         connectionString = reply[openBracketIndex+1:-(len(reply) - closeBracketIndex)]
-
+        print connectionString
         rec = connectionString.split(',')
         self.passiveServerIP = '.'.join(rec[:4])
 
@@ -95,10 +93,10 @@ class clientLogic():
                 fileName.find('.pl') != -1 or \
                 fileName.find('.cgi') != -1:
                 self.binaryFile = False
-                self.clientSock.send('TYPE A')
+                self.clientSock.send('TYPE A\r\n')
             else:
                 self.binaryFile = True
-                self.clientSock.send('TYPE I')
+                self.clientSock.send('TYPE I\r\n')
         else:
             print 'Specified type not recognised'
             return
@@ -106,11 +104,11 @@ class clientLogic():
         self.getReply()
 
     def STRU(self, structureCode):
-        self.clientSock.send('STRU '+structureCode)
+        self.clientSock.send('STRU '+structureCode +'\r\n')
         self.getReply()
 
     def MODE(self, transferMode):
-        self.clientSock.send('MODE '+transferMode)
+        self.clientSock.send('MODE '+transferMode +'\r\n')
         self.getReply()
 
     # service commands -----------------------------------------------
@@ -118,7 +116,7 @@ class clientLogic():
     def RETR(self, fileName):
         # receive a copy file over data connection
     
-        self.clientSock.send('RETR '+fileName)
+        self.clientSock.send('RETR '+fileName +'\r\n')
 
         self.open_dataSocket()
 
@@ -157,7 +155,7 @@ class clientLogic():
         filePath = os.path.join(self.baseDirectory, fileName)
 
         if os.path.exists(filePath):
-            self.clientSock.send('STOR '+fileName)
+            self.clientSock.send('STOR '+fileName +'\r\n')
         else:
             print 'File not found'
             return
@@ -188,11 +186,11 @@ class clientLogic():
 
         if self.passive:
             self.dataStreamSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM) 
+            self.dataStreamSocket.connect((self.passiveServerIP, self.passiveServerPort))
             reply = self.clientSock.recv(1024)
             print 'Response:', reply 
-            if reply[:3] == '150':
-                self.dataStreamSocket.connect((self.passiveServerIP, self.passiveServerPort))
-            else:
+            
+            if not (reply[:3] == '150'):
                 return
         else:
             reply = self.clientSock.recv(1024)
@@ -205,11 +203,11 @@ class clientLogic():
         self.dataStreamSocket.close()
     
     def DELE(self, fileName):
-        self.clientSock.send('DELE ' + fileName)
+        self.clientSock.send('DELE ' + fileName +'\r\n')
         self.getReply()
     
     def PWD(self):
-        self.clientSock.send('PWD \r\n')
+        self.clientSock.send('PWD\r\n')
         self.getReply()
 
     def LIST(self):
@@ -240,7 +238,7 @@ class clientLogic():
         self.getReply()
     
     def MKD(self, dirName):
-        self.clientSock.send('MKD  ' + dirName)
+        self.clientSock.send('MKD ' + dirName +'\r\n')
         self.getReply()
     
     def RMD(self, dirName):
@@ -253,7 +251,7 @@ class clientLogic():
         # else:
         #     print 'Invalid response.'
 
-        self.clientSock.send('RMD  ' + dirName)
+        self.clientSock.send('RMD  ' + dirName +'\r\n')
         self.getReply()
     
     def NOOP(self):
