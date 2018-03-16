@@ -2,12 +2,15 @@ import socket
 import sys
 from FTPclient_logic import clientLogic
 
-#servIP = socket.gethostbyname(sys.argv[1])
-servIP = socket.gethostbyname(socket.gethostname())
+servIP = socket.gethostbyname(sys.argv[1])
+#servIP = socket.gethostbyname(socket.gethostname())
+print servIP
 
 logic = clientLogic(servIP)
 
-if logic.clientSock.recv(256)[:3] == '220':       # wait for service ready response
+reply = logic.clientSock.recv(256)
+print 'Response:', reply
+if reply[:3] == '220':       # wait for service ready response
 
     while 1:
         # generate message to be sent

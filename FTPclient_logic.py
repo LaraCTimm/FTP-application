@@ -15,6 +15,7 @@ class clientLogic():
         self.passiveServerPort = self.servPort
         self.passiveServerIP = self.servIP
         self.baseDirectory = os.path.abspath('./clientDirectory')
+        self.calledPortPasv = False
 
     def getReply(self):
         reply = self.clientSock.recv(1024)
@@ -46,7 +47,7 @@ class clientLogic():
         self.clientSock.send('QUIT\r\n')
         self.getReply()
 
-    # transfer parameter commands -----------------------------------
+# transfer parameter commands -----------------------------------
 
     def PORT(self, ipAddr, port):
         IPChunks = ipAddr.split('.')
@@ -63,6 +64,7 @@ class clientLogic():
 
         print 'Port connection opened at address %s:%u\n' % (ipAddr, port)
 
+        self.calledPortPasv = True
         self.getReply()
 
     def PASV(self):
@@ -83,6 +85,7 @@ class clientLogic():
 
         print 'Connecting to server address %s:%u\n' % (self.passiveServerIP, self.passiveServerPort)
 
+        self.calledPortPasv = True
         self.passive = True
 
     def TYPE(self, fileName):
@@ -118,10 +121,14 @@ class clientLogic():
     
         self.clientSock.send('RETR '+fileName +'\r\n')
 
+        if not self.calledPortPasv:
+            self.getReply()
+            return
+
         self.open_dataSocket()
 
         filePath = os.path.join(self.baseDirectory, fileName)
-        # 
+        
         if self.binaryFile:
             requestedFile = open(filePath,'wb')
         else :
@@ -134,6 +141,7 @@ class clientLogic():
             dataChunk = self.dataStreamSocket.recv(1024)
 
         requestedFile.close()
+        self.close_dataSocket()
         print "Done Receiving"
         self.dataStreamSocket.close()
 
@@ -160,6 +168,10 @@ class clientLogic():
             print 'File not found'
             return
 
+        if not self.calledPortPasv:
+            self.getReply()
+            return
+
         self.open_dataSocket()
         
         if self.binaryFile:
@@ -175,6 +187,7 @@ class clientLogic():
             fileChunk = requestedFile.read(1024)
 
         requestedFile.close()
+        self.close_dataSocket()
         self.dataStreamSocket.shutdown(socket.SHUT_WR)
 
         print "Done Sending"
@@ -201,6 +214,7 @@ class clientLogic():
         if self.passive == False:
             self.activeSocket.close()
         self.dataStreamSocket.close()
+        self.calledPortPasv = False
     
     def DELE(self, fileName):
         self.clientSock.send('DELE ' + fileName +'\r\n')
@@ -211,7 +225,12 @@ class clientLogic():
         self.getReply()
 
     def LIST(self):
+
         self.clientSock.send('LIST \r\n')
+
+        if not self.calledPortPasv:
+            self.getReply()
+            return
 
         self.open_dataSocket()
 
@@ -235,6 +254,8 @@ class clientLogic():
         if len(directoryArray) == 0:
             print 'Directory empty...'
 
+        self.close_dataSocket()
+
         self.getReply()
     
     def MKD(self, dirName):
@@ -251,7 +272,7 @@ class clientLogic():
         # else:
         #     print 'Invalid response.'
 
-        self.clientSock.send('RMD  ' + dirName +'\r\n')
+        self.clientSock.send('RMD ' + dirName +'\r\n')
         self.getReply()
     
     def NOOP(self):

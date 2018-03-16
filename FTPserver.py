@@ -46,6 +46,7 @@ class clientThread(threading.Thread):
         self.username = ''
         self.passive = False #
         self.binaryFile = False #
+        self.dataConnOpen = False
 
         self.dataPort = -1  # set in port and pasv
         self.dataAddress = '' #
@@ -86,7 +87,8 @@ class clientThread(threading.Thread):
     def USER(self, command):
 
         # check if user is already registered
-        self.username = command[5:]
+        self.username = command[5:-2]
+        print self.username
         self.userRow = -1
 
         if self.username != '':
@@ -117,7 +119,7 @@ class clientThread(threading.Thread):
 
     def PASS(self, command):
 
-        password = command[5:]
+        password = command[5:-2]
         if password != '' and password != ' ':
             if self.username != '':                  # must have entered username to enter password
 
@@ -144,7 +146,7 @@ class clientThread(threading.Thread):
     def CWD(self, command):
         self.checkLoggedIn()
 
-        newDirectory = os.path.join(self.workingDirectory, command[5:])
+        newDirectory = os.path.join(self.workingDirectory, command[4:-2])
 
         if os.path.exists(newDirectory):
             self.workingDirectory = newDirectory
@@ -179,7 +181,7 @@ class clientThread(threading.Thread):
             self.passive = False
             self.passiveSocket.close()
 
-        rec = command[5:].split(',')
+        rec = command[5:-2].split(',')
         self.dataAddress = '.'.join(rec[:4])
         byteU = int(rec[4])
         byteL = int(rec[5])
@@ -205,7 +207,7 @@ class clientThread(threading.Thread):
 
     def TYPE(self, command):
 
-        fileType = command[5:]
+        fileType = command[5:-2]
 
         if fileType == 'I':
             self.binaryFile = True
@@ -218,7 +220,7 @@ class clientThread(threading.Thread):
 
     def STRU(self, command):
         # specifies file structure (file[D], record, page)
-        structure = command[5:]
+        structure = command[5:-2]
 
         if structure == 'F':
             self.connSock.send('200 Switching to File structure mode.\r\n')
@@ -227,7 +229,7 @@ class clientThread(threading.Thread):
 
     def MODE(self, command):
         # specify data transfer mode (stream[D], block, compressed)
-        mode = command[5:]
+        mode = command[5:-2]
 
         if mode == 'S':
             self.connSock.send('200 Switching to Stream transfer mode.\r\n')
@@ -239,71 +241,78 @@ class clientThread(threading.Thread):
     def RETR(self, command):
         # transfer a copy file to client 
         self.checkLoggedIn()
-    
-        fileName = command[5:]
-        filePath = os.path.join(self.workingDirectory, fileName)
-        
-        if os.path.exists(filePath):
-            requestedFile = None
-            if self.binaryFile:
-                requestedFile = open(filePath,'rb')
-            else:
-                requestedFile = open(filePath,'r')
 
-            self.connSock.send('150 Opening data connection.\r\n')
-            try:
-                self.open_dataSocket()
-
-                fileChunk = requestedFile.read(1024)
-
-                while fileChunk:
-                    print 'Sending...'
-                    self.dataSocket.send(fileChunk)
-                    fileChunk = requestedFile.read(1024)
+        if self.dataConnOpen: 
+            fileName = command[5:-2]
+            filePath = os.path.join(self.workingDirectory, fileName)
             
-            except Exception, err:
-                self.connSock.send('451 Requested action aborted: local error in processing.\r\n')
+            if os.path.isfile(filePath):
+                requestedFile = None
+                if self.binaryFile:
+                    requestedFile = open(filePath,'rb')
+                else:
+                    requestedFile = open(filePath,'r')
 
-            requestedFile.close()
-            self.close_dataSocket()
+                self.connSock.send('150 Opening data connection.\r\n')
+                try:
+                    self.open_dataSocket()
 
-            self.connSock.send('226 Closing data connection. Requested file action successful.\r\n')
+                    fileChunk = requestedFile.read(1024)
+
+                    while fileChunk:
+                        print 'Sending...'
+                        self.dataSocket.send(fileChunk)
+                        fileChunk = requestedFile.read(1024)
+                
+                except Exception, err:
+                    self.connSock.send('451 Requested action aborted: local error in processing.\r\n')
+
+                requestedFile.close()
+                self.close_dataSocket()
+
+                self.connSock.send('226 Closing data connection. Requested file action successful.\r\n')
+            else:
+                self.connSock.send('550 Requested action not taken. File unavailable.\r\n')
         else:
-            self.connSock.send('550 Requested action not taken. File unavailable.\r\n')
+            self.connSock.send('425 Use PORT or PASV first.\r\n')
 
     def STOR(self, command):
         # accept data from data connection and store as file on server
         self.checkLoggedIn()
     
-        fileName = command[5:]
-        filePath = os.path.join(self.workingDirectory, fileName)
+        if self.dataConnOpen:
+            fileName = command[5:-2]
+            filePath = os.path.join(self.workingDirectory, fileName)
 
-        requestedFile = None
-        if self.binaryFile:
-            requestedFile = open(filePath, 'wb')
-        else:
-            requestedFile = open(filePath, 'w')
-        
-        self.connSock.send('150 File status okay; about to open data connection.\r\n')
+            requestedFile = None
+            if self.binaryFile:
+                requestedFile = open(filePath, 'wb')
+            else:
+                requestedFile = open(filePath, 'w')
+            
+            self.connSock.send('150 File status okay; about to open data connection.\r\n')
 
-        try:
-            self.open_dataSocket()
+            try:
+                self.open_dataSocket()
 
-            fileChunk = self.dataSocket.recv(1024)
-            while (fileChunk):
-                print "Receiving..."
-                requestedFile.write(fileChunk)
                 fileChunk = self.dataSocket.recv(1024)
+                while (fileChunk):
+                    print "Receiving..."
+                    requestedFile.write(fileChunk)
+                    fileChunk = self.dataSocket.recv(1024)
 
-            requestedFile.close()
-            self.close_dataSocket
-            print "Done Receiving"
-            self.connSock.send('226 Closing data connection. Requested file action successful.\r\n')
-        
-        except Exception, err:
-            self.connSock.send('550 Requested action not taken. File transfer unsuccessful.\r\n')
+                requestedFile.close()
+                self.close_dataSocket
+                print "Done Receiving"
+                self.connSock.send('226 Closing data connection. Requested file action successful.\r\n')
+            
+            except Exception, err:
+                self.connSock.send('550 Requested action not taken. File transfer unsuccessful.\r\n')
+        else:
+            self.connSock.send('425 Use PORT or PASV first.\r\n')
 
     def open_dataSocket(self):
+        self.dataConnOpen = True
         #----PASSIVE-------------------------------------------------------
         if self.passive:
             self.dataSocket, addr = self.passiveSocket.accept()
@@ -315,6 +324,7 @@ class clientThread(threading.Thread):
             print 'Data stream opened at address: (\'%s\', %u)' % (self.dataAddress, self.dataPort)
 
     def close_dataSocket(self):
+        self.dataConnOpen = False
         if self.passive:
             self.passiveSocket.close()
         self.dataSocket.close()
@@ -322,7 +332,7 @@ class clientThread(threading.Thread):
     def DELE(self, command):
         self.checkLoggedIn()
 
-        filePath = os.path.join(self.workingDirectory, command[5:])
+        filePath = os.path.join(self.workingDirectory, command[5:-2])
         if os.path.isfile(filePath):
             os.remove(filePath)
             self.connSock.send('250 Requested file action okay, file deleted.\r\n')
@@ -336,8 +346,9 @@ class clientThread(threading.Thread):
         self.connSock.send('257 \"%s\" is the working directory.\r\n' % (self.workingDirectory[len(serverDirectory):]))
 
     def LIST(self, command):
-        if self.loggedIn:
+        self.checkLoggedIn()
 
+        if self.dataConnOpen:
             self.connSock.send('150 Opening data connection. Sending directory list.\r\n')    
             self.open_dataSocket()
 
@@ -352,7 +363,7 @@ class clientThread(threading.Thread):
             self.connSock.send('226 Closing data connection. Directory list sent.\r\n')
             self.close_dataSocket()
         else:
-            self.connSock.send('530 Not logged in.')
+            self.connSock.send('425 Use PORT or PASV first.\r\n')
 
     def createItemString(self, itemPath):
         itemStat = os.stat(itemPath)
@@ -383,7 +394,7 @@ class clientThread(threading.Thread):
     def MKD(self, command):
         self.checkLoggedIn()
 
-        dirPath = os.path.join(self.workingDirectory, command[5:])
+        dirPath = os.path.join(self.workingDirectory, command[4:-2])
         if not os.path.exists(dirPath):
             os.makedirs(dirPath)
             self.connSock.send('257 \"%s\\%s\" created.\r\n'\
@@ -395,7 +406,7 @@ class clientThread(threading.Thread):
     def RMD(self, command):
         self.checkLoggedIn()
         if command[5:] != '':
-            dirPath = os.path.join(self.workingDirectory, command[5:])
+            dirPath = os.path.join(self.workingDirectory, command[4:-2])
             if os.path.isdir(dirPath):
                 shutil.rmtree(dirPath)
                 self.connSock.send('250 Requested file action okay, directory deleted.\r\n')
@@ -409,6 +420,9 @@ class clientThread(threading.Thread):
     def NOOP(self, command):
         self.checkLoggedIn()
         self.connSock.send('200 Command okay.\r\n')
+
+    def AUTH(self, command):
+        self.connSock.send('530 Please log in with USER and PASS.\r\n')
 
 #---------------------------------------------------------------------------
 # MAIN

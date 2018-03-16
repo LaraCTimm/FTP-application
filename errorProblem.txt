@@ -1,0 +1,50 @@
+
+Input message: stor doc.txt
+Error:  [Errno 10061] No connection could be made because the target machine actively refused it
+Input message: pasv
+Response: 150 File status okay; about to open data connection.
+550 Requested action not taken. File transfer unsuccessful.
+
+
+Error:  list index out of range
+Input message: pasv
+Response: 227 Entering passive mode (10,30,3,185,200,41).
+
+10,30,3,185,200,41
+Connecting to server address 10.30.3.185:51241
+
+Input message: stor doc.txt
+Error:  [Errno 10061] No connection could be made because the target machine actively refused it
+Input message: type .txt
+Response: 227 Entering passive mode (10,30,3,185,200,45).
+150 File status okay; about to open data connection.
+
+
+Input message: type .txt
+
+------------------------------------------------------------------------------
+other thing to fix fileZilla connecting to our server
+
+C:\Users\l_tim\Google Drive\1 Electrical 4th Year\Networks\FTP_project>python FTPserver.py
+Listening on 10.30.3.185 : 21
+Press Enter to end...
+Client connected...
+Request: QUIT
+
+Error: 221 Service closing control connection.
+Client disconnected...
+Client connected...
+Request: AUTH TLS
+
+Error: 'clientThread' object has no attribute 'AUTH'
+Client connected...
+Request: AUTH TLS
+
+Error: 'clientThread' object has no attribute 'AUTH'
+
+
+
+
+"" NOTE """
+
+shoulf have a recieve and print in all cases thingy. If reply is not what yo expect you should getReply() again
