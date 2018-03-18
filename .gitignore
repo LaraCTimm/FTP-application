@@ -1,3 +1,11 @@
 Wireshark logs - wits server and filezilla/
 clientDirectory/
 serverDirectory/
+*.aux
+*.bbl
+*.blg
+*.log
+*.out
+*.pdf
+*.soc
+*.synctex.gz

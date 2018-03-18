@@ -156,6 +156,7 @@ class clientLogic():
                 os.remove(filePath)
         else:
             print 'Unknown transfer error occured'
+            self.getReply()
 
     def STOR(self, fileName):
         
@@ -168,7 +169,7 @@ class clientLogic():
             print 'File not found'
             return
 
-        if not self.calledPortPasv:
+        if self.calledPortPasv == False:
             self.getReply()
             return
 
@@ -188,12 +189,19 @@ class clientLogic():
 
         requestedFile.close()
         self.close_dataSocket()
-        self.dataStreamSocket.shutdown(socket.SHUT_WR)
 
         print "Done Sending"
 
         response = self.clientSock.recv(1024)
         print response
+
+        if response[:3] == '226':
+            return
+        elif response[:3] == '550':
+            print 'File trainsfer failed'
+        else:
+            print 'Unknown transfer error occured'
+            self.getReply()
 
     def open_dataSocket(self):
 

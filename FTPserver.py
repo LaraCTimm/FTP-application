@@ -7,6 +7,11 @@ import time
 from stat import * 
 import stat
 import shutil
+import urllib, json
+
+data = json.loads(urllib.urlopen("http://ip.jsontest.com/").read())
+print data["ip"]
+
 #from filemode_class import FileMode
 
 from datetime import datetime
@@ -79,7 +84,7 @@ class clientThread(threading.Thread):
                         print 'Client disconnected...'
                         break
                     else:
-                        do = 'stuff'
+                        self.connSock.send('500 Command not supported.\r\n')
 
 
     # access control commands ---------------------------------------------------------------------------
@@ -146,7 +151,19 @@ class clientThread(threading.Thread):
     def CWD(self, command):
         self.checkLoggedIn()
 
-        newDirectory = os.path.join(self.workingDirectory, command[4:-2])
+        directoryString = command[4:-2]
+        print  'directory string:', directoryString
+        print 'working directory:', self.workingDirectory
+        index = directoryString.find('\\')
+
+        if index != -1:
+            directoryString = directoryString.split('\\')[-1]
+
+        if directoryString == self.workingDirectory.split('\\')[-2]:
+            self.CDUP('dummy string')
+            return
+            
+        newDirectory = os.path.join(self.workingDirectory, directoryString)
 
         if os.path.exists(newDirectory):
             self.workingDirectory = newDirectory
@@ -189,6 +206,8 @@ class clientThread(threading.Thread):
 
         self.connSock.send('200 Port command successful.\r\n')
 
+        self.dataConnOpen = True
+
     def PASV(self, command): # PASSIVE MODE ##############
         
         self.passive = True
@@ -204,6 +223,7 @@ class clientThread(threading.Thread):
         
         connectionString = '(%s,%i,%i)' % (','.join(locIP.split('.')), byteU, byteL)
         self.connSock.send('227 Entering passive mode '+ connectionString +'.\r\n')
+        self.dataConnOpen = True
 
     def TYPE(self, command):
 
@@ -244,6 +264,10 @@ class clientThread(threading.Thread):
 
         if self.dataConnOpen: 
             fileName = command[5:-2]
+            index = fileName.find('\\')
+            if index != -1:
+                fileName = fileName.split('\\')[-1]
+                
             filePath = os.path.join(self.workingDirectory, fileName)
             
             if os.path.isfile(filePath):
@@ -281,7 +305,12 @@ class clientThread(threading.Thread):
         self.checkLoggedIn()
     
         if self.dataConnOpen:
+
             fileName = command[5:-2]
+            index = fileName.find('\\')
+            if index != -1:
+                fileName = fileName.split('\\')[-1]
+
             filePath = os.path.join(self.workingDirectory, fileName)
 
             requestedFile = None
@@ -302,7 +331,7 @@ class clientThread(threading.Thread):
                     fileChunk = self.dataSocket.recv(1024)
 
                 requestedFile.close()
-                self.close_dataSocket
+                self.close_dataSocket()
                 print "Done Receiving"
                 self.connSock.send('226 Closing data connection. Requested file action successful.\r\n')
             
@@ -312,7 +341,6 @@ class clientThread(threading.Thread):
             self.connSock.send('425 Use PORT or PASV first.\r\n')
 
     def open_dataSocket(self):
-        self.dataConnOpen = True
         #----PASSIVE-------------------------------------------------------
         if self.passive:
             self.dataSocket, addr = self.passiveSocket.accept()
@@ -332,7 +360,13 @@ class clientThread(threading.Thread):
     def DELE(self, command):
         self.checkLoggedIn()
 
-        filePath = os.path.join(self.workingDirectory, command[5:-2])
+        fileString = command[5:-2]
+        index = fileString.find('\\')
+
+        if index != -1:
+            fileString = fileString.split('\\')[-1]
+
+        filePath = os.path.join(self.workingDirectory, fileString)
         if os.path.isfile(filePath):
             os.remove(filePath)
             self.connSock.send('250 Requested file action okay, file deleted.\r\n')
@@ -347,6 +381,7 @@ class clientThread(threading.Thread):
 
     def LIST(self, command):
         self.checkLoggedIn()
+        self.binaryFile = False
 
         if self.dataConnOpen:
             self.connSock.send('150 Opening data connection. Sending directory list.\r\n')    
@@ -382,11 +417,11 @@ class clientThread(threading.Thread):
         else:
             directoryChar = '-'
 
-        timestamp = time.strftime("%d %b %Y %H:%M" , time.localtime(itemStat[ST_MTIME]))
+        timestamp = time.strftime("%b %d %H:%M" , time.localtime(itemStat[ST_MTIME]))
 
         itemString = directoryChar + itemPermissions + ' ' + str(itemStat[ST_INO]) + ' ' + \
                      str(itemStat[ST_UID]) + ' ' + str(itemStat[ST_GID]) + ' ' + \
-                     str(itemStat[ST_SIZE]) + ' ' + timestamp + ' ' + os.path.basename(itemPath) + ' \r\n'
+                     str(itemStat[ST_SIZE]) + ' ' + timestamp + ' ' + os.path.basename(itemPath) + '\r\n'
                      
     
         return itemString
@@ -394,19 +429,31 @@ class clientThread(threading.Thread):
     def MKD(self, command):
         self.checkLoggedIn()
 
-        dirPath = os.path.join(self.workingDirectory, command[4:-2])
+        directoryString = command[4:-2]
+        index = directoryString.find('\\')
+
+        if index != -1:
+            directoryString = directoryString.split('\\')[-1]
+
+        dirPath = os.path.join(self.workingDirectory, directoryString)
         if not os.path.exists(dirPath):
             os.makedirs(dirPath)
             self.connSock.send('257 \"%s\\%s\" created.\r\n'\
-                    % (self.workingDirectory[len(serverDirectory):],command[5:]))
+                    % (self.workingDirectory[len(serverDirectory):],command[4:]))
         else:
             self.connSock.send('550 Requested action not taken. \"%s\\%s\" already exists.\r\n'\
-                    % (self.workingDirectory[len(serverDirectory):],command[5:]) )
+                    % (self.workingDirectory[len(serverDirectory):],command[4:]) )
             
     def RMD(self, command):
         self.checkLoggedIn()
         if command[5:] != '':
-            dirPath = os.path.join(self.workingDirectory, command[4:-2])
+            directoryString = command[4:-2]
+
+            index = directoryString.find('\\')
+            if index != -1:
+                directoryString = directoryString.split('\\')[-1]
+
+            dirPath = os.path.join(self.workingDirectory, directoryString)
             if os.path.isdir(dirPath):
                 shutil.rmtree(dirPath)
                 self.connSock.send('250 Requested file action okay, directory deleted.\r\n')

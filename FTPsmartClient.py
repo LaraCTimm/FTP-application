@@ -2,7 +2,10 @@ import socket
 import sys
 from FTPclient_logic import clientLogic
 
-servIP = socket.gethostbyname(sys.argv[1])
+if sys.argv[1] == 'local':
+    servIP = socket.gethostbyname(socket.gethostname())
+else:
+    servIP = socket.gethostbyname(sys.argv[1])
 #servIP = socket.gethostbyname(socket.gethostname())
 print servIP
 
