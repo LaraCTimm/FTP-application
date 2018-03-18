@@ -2,23 +2,24 @@ import socket
 import threading
 import os
 import sys
-from pathlib2 import Path
+#from pathlib2 import Path
 import time
 from stat import * 
-import stat
-import shutil
-import urllib, json
+import shutil # library used in RMD
 
-data = json.loads(urllib.urlopen("http://ip.jsontest.com/").read())
-print data["ip"]
+# import stat
+# import urllib, json
 
-#from filemode_class import FileMode
+# data = json.loads(urllib.urlopen("http://ip.jsontest.com/").read())
+# print data["ip"]
 
-from datetime import datetime
+# from datetime import datetime
 
-locIP = socket.gethostbyname(socket.gethostname())
-locPort = 21
-serverDirectory = os.path.abspath('./serverDirectory')
+locIP = socket.gethostbyname(socket.gethostname())  # get local IP of server PC
+locPort = 21                                        # default port for FTP command connection
+
+# this directory must exist and should contain a directory for each registered user
+serverDirectory = os.path.abspath('./serverDirectory') 
 #---------------------------------------------------------------------------
 
 class serverThread(threading.Thread):
@@ -28,8 +29,10 @@ class serverThread(threading.Thread):
         self.servSock.bind((locIP, locPort))
 
     def run(self):
+        # up to 5 clients may be connected at a time
         self.servSock.listen(5)
         while 1:
+            # for each new client that connects, assign it a new thread
             clientTh = clientThread(self.servSock.accept())
             clientTh.setDaemon(1)
             clientTh.start()
@@ -43,20 +46,21 @@ class clientThread(threading.Thread):
     def __init__(self, (conn, addr)):
         threading.Thread.__init__(self)
         print 'Client connected...'
-        self.connSock = conn            # socket for command messages
+        self.connSock = conn            # socket for command messages with connected client
         self.connAddr = addr            # IP address of connected client
-        self.baseDirectory = serverDirectory
-        self.workingDirectory = '' #
+        self.baseDirectory = ''         # serverDirectory\username
+        self.workingDirectory = ''      # current cleint working directory
+
         self.loggedIn = False
         self.username = ''
-        self.passive = False #
-        self.binaryFile = False #
-        self.dataConnOpen = False
+        self.passive = False 
+        self.binaryFile = False 
+        self.setPortPasv = False
 
-        self.dataPort = -1  # set in port and pasv
-        self.dataAddress = '' #
-
-        # file containing usernames and passwords of people registered on server 
+        self.dataAddress = ''   # IP address for data connection
+        self.dataPort = -1      # port for data connection
+        
+        # file containing usernames and passwords of registered clients
         passwordFile = open("userdata.txt", 'r')
         self.userData = passwordFile.readlines()
         passwordFile.close()
@@ -64,20 +68,19 @@ class clientThread(threading.Thread):
     def run(self):
         self.connSock.send('220 Service ready for new user.\r\n')
         while 1:
-            command = self.connSock.recv(256)
+            command = self.connSock.recv(256)       # all client commands handled here
             if not command: 
                 break
             else:
                 print 'Request:', command
                 try:
+                    # convert received command into a function call and try to call that function
                     action = getattr(self, command[:4].strip().upper())
                     action(command)
                 except Exception, err:
                     print 'Error:', err
                     if err[0][:3] == '500':
                         self.connSock.send('500 Syntax error, command unrecognized.\r\n')
-                    elif err[0][:3] == '530':
-                         self.connSock.send('530 Not logged in.\r\n')
                     elif err[0][:3] == '221':
                         self.connSock.send('221 Service closing control connection.\r\n')
                         self.connSock.close()
@@ -87,48 +90,49 @@ class clientThread(threading.Thread):
                         self.connSock.send('500 Command not supported.\r\n')
 
 
-    # access control commands ---------------------------------------------------------------------------
+    # ACCESS CONTROL COMMANDS ---------------------------------------------------------------------------
 
     def USER(self, command):
-
-        # check if user is already registered
+        
         self.username = command[5:-2]
-        print self.username
+        # print self.username
         self.userRow = -1
 
         if self.username != '':
+            # check if user is already registered
             for i in range(0, len(self.userData)):
-                index = self.userData[i].find(self.username)
+                index = self.userData[i].find(self.username)    
                 
                 if index != -1:
-                    self.userRow = i
-                    break
+                    self.userRow = i    # identify which user is connecting to server
+                    break               # stop looking
                     
-            if self.userRow > -1:
+            if self.userRow > -1:       # if username is found in userData file
                 self.baseDirectory = os.path.join(serverDirectory, self.username) 
-                user_dir = Path(self.baseDirectory)     # base directory for specific client
 
-                if user_dir.is_dir() == True:
+                if os.path.isdir(self.baseDirectory):
                     self.connSock.send('331 User name okay, need password.\r\n')
                     return
-                else:
-                    self.username = ''
-                    self.connSock.send('332 Need account for login. <directory not found>\r\n')
+                else: 
+                    # if directory doesn't exist, make one at base directory for specific client
+                    os.makedirs(self.baseDirectory)
+                    self.connSock.send('331 User name okay, need password.\r\n')
                     return
             else:
-                self.connSock.send('332 Need account for login. <username not registered>\r\n')
+                self.username = ''
+                self.connSock.send('332 Need account for login.\r\n')
                 return
         else:
-            self.connSock.send('332 Need account for login. <invalid username>\r\n')
+            self.connSock.send('332 Need account for login.\r\n')
             return
 
     def PASS(self, command):
-
         password = command[5:-2]
-        if password != '' and password != ' ':
-            if self.username != '':                  # must have entered username to enter password
 
-                if self.userRow > -1:
+        if password != '' and password != ' ':      # must have entered a valid password
+            if self.username != '':                 # must have entered a registered username 
+                if self.userRow > -1:               # if the username was found in the userData file
+                    # retrieve stored password
                     storedPassword = self.userData[self.userRow][-(len(password)+1):-1] 
 
                     if storedPassword == password:
@@ -137,32 +141,34 @@ class clientThread(threading.Thread):
                         self.connSock.send('230 User logged in, proceed.\r\n')
                         return
                     else:
-                        self.connSock.send('530 Not logged in. <password incorrect>\r\n')
+                        password = ''
+                        self.connSock.send('530 Not logged in.\r\n')
                         return
                 else:
-                    self.connSock.send('332 Need account for login. <username not registered>\r\n')
+                    self.connSock.send('332 Need account for login.\r\n')
                     return
             else:
-                self.connSock.send('332 Need account for login. <username not registered>\r\n')
+                self.connSock.send('332 Need account for login.\r\n')
                 return
         else:
-            self.connSock.send('332 Need account for login. <invalid password>\r\n')
+            self.connSock.send('332 Need account for login.\r\n')
 
     def CWD(self, command):
-        self.checkLoggedIn()
+        if self.loggedIn == False: 
+            return
 
         directoryString = command[4:-2]
-        print  'directory string:', directoryString
-        print 'working directory:', self.workingDirectory
+
+        # check for variations in commands made by different clients
         index = directoryString.find('\\')
-
         if index != -1:
-            directoryString = directoryString.split('\\')[-1]
+            directoryString = directoryString.split('\\')[-1]   # isolate directory name
 
-        if directoryString == self.workingDirectory.split('\\')[-2]:
-            self.CDUP('dummy string')
-            return
-            
+        # if directoryString == self.workingDirectory.split('\\')[-2]:
+        #     self.CDUP('')
+        #     return
+        
+        # make a path of the directory to be changed to
         newDirectory = os.path.join(self.workingDirectory, directoryString)
 
         if os.path.exists(newDirectory):
@@ -172,8 +178,9 @@ class clientThread(threading.Thread):
             self.connSock.send('550 Requested action not taken. Directory does not exist.\r\n')     
     
     def CDUP(self, command):
-        self.checkLoggedIn()
-
+        if self.loggedIn == False: 
+            return
+        # check that the client isnt going above their base directory
         highestDirectory = os.path.join(serverDirectory, self.username)
         if self.workingDirectory != highestDirectory:
             self.workingDirectory = os.path.dirname(self.workingDirectory)
@@ -182,22 +189,28 @@ class clientThread(threading.Thread):
             self.connSock.send('550 Requested action not taken. Permission denied.\r\n')    
     
     def QUIT(self, command):
-        # QUIT <CRLF>
+        # if the client quits the application the client thread can be closed
         raise Exception('221 Service closing control connection.')
 
     def checkLoggedIn(self):
-        if not self.loggedIn: 
-            raise Exception('530 Not logged in.')
+        if self.loggedIn == False: 
+            self.connSock.send('530 Not logged in.\r\n')
+            return False
+        else: 
+            return True
 
     # transfer parameter commands ----------------------------------------------------------------------
 
     def PORT(self, command): # ACTIVE MODE ###############
-        self.checkLoggedIn()
+        if self.checkLoggedIn() == False:
+            return
 
+        # if in passive mode, close the socket accepting new passive data connections
         if self.passive:
             self.passive = False
             self.passiveSocket.close()
 
+        # set data IP and port from recieved client active port details
         rec = command[5:-2].split(',')
         self.dataAddress = '.'.join(rec[:4])
         byteU = int(rec[4])
@@ -206,29 +219,37 @@ class clientThread(threading.Thread):
 
         self.connSock.send('200 Port command successful.\r\n')
 
-        self.dataConnOpen = True
+        # if port or pasv have not been called, dont allow list, retr or stor.
+        self.setPortPasv = True
 
     def PASV(self, command): # PASSIVE MODE ##############
-        
+        if self.checkLoggedIn() == False:
+            return
+
         self.passive = True
 
+        # set up a new passive socket on which to listen for a new data connection
         self.passiveSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.passiveSocket.bind((locIP, 0))     # binds to local IP and available port
         ip, port = self.passiveSocket.getsockname()
         self.passiveSocket.listen(1)
-        print 'Connection opened',ip,':',port
+        print 'Listening on',ip,':',port
 
+        # convert details to connection string to be sent to client
         byteU = int(port / 256)
         byteL = int(port % 256)
         
         connectionString = '(%s,%i,%i)' % (','.join(locIP.split('.')), byteU, byteL)
         self.connSock.send('227 Entering passive mode '+ connectionString +'.\r\n')
-        self.dataConnOpen = True
+        self.setPortPasv = True
 
     def TYPE(self, command):
+        if self.checkLoggedIn() == False:
+            return
 
         fileType = command[5:-2]
 
+        # set file type to be sent on data connection 
         if fileType == 'I':
             self.binaryFile = True
             self.connSock.send('200 Switching to Binary mode.\r\n')
@@ -236,33 +257,40 @@ class clientThread(threading.Thread):
             self.binaryFile = False
             self.connSock.send('200 Switching to ASCII mode.\r\n')
         else:
-            raise Exception('500 Syntax error, command unrecognized.')
+            self.connSock.send('504 Command not implemented for that parameter.\r\n')
 
     def STRU(self, command):
-        # specifies file structure (file[D], record, page)
+        # specifies file structure (file[D], record, page) ONLY DEFAULT IMPLEMENTED
+        if self.checkLoggedIn() == False:
+            return
+
         structure = command[5:-2]
 
         if structure == 'F':
             self.connSock.send('200 Switching to File structure mode.\r\n')
         else:
-            raise Exception('500 Syntax error, command unrecognized.')
+            self.connSock.send('504 Command not implemented for that parameter.\r\n')
 
     def MODE(self, command):
-        # specify data transfer mode (stream[D], block, compressed)
+        # specify data transfer mode (stream[D], block, compressed) ONLY DEFAULT IMPLEMENTED
+        if self.checkLoggedIn() == False:
+            return
+
         mode = command[5:-2]
 
         if mode == 'S':
             self.connSock.send('200 Switching to Stream transfer mode.\r\n')
         else:
-            raise Exception('500 Syntax error, command unrecognized.')
+            self.connSock.send('504 Command not implemented for that parameter.\r\n')
 
     # service commands ---------------------------------------------------------------------------------
 
     def RETR(self, command):
         # transfer a copy file to client 
-        self.checkLoggedIn()
+        if self.checkLoggedIn() == False:
+            return
 
-        if self.dataConnOpen: 
+        if self.setPortPasv: 
             fileName = command[5:-2]
             index = fileName.find('\\')
             if index != -1:
@@ -302,9 +330,10 @@ class clientThread(threading.Thread):
 
     def STOR(self, command):
         # accept data from data connection and store as file on server
-        self.checkLoggedIn()
+        if self.checkLoggedIn() == False:
+            return
     
-        if self.dataConnOpen:
+        if self.setPortPasv:
 
             fileName = command[5:-2]
             index = fileName.find('\\')
@@ -352,13 +381,14 @@ class clientThread(threading.Thread):
             print 'Data stream opened at address: (\'%s\', %u)' % (self.dataAddress, self.dataPort)
 
     def close_dataSocket(self):
-        self.dataConnOpen = False
+        self.setPortPasv = False
         if self.passive:
             self.passiveSocket.close()
         self.dataSocket.close()
     
     def DELE(self, command):
-        self.checkLoggedIn()
+        if self.checkLoggedIn() == False:
+            return
 
         fileString = command[5:-2]
         index = fileString.find('\\')
@@ -376,14 +406,17 @@ class clientThread(threading.Thread):
             self.connSock.send('550 Requested action not taken. File does not exist.\r\n')
 
     def PWD(self, command):
-        self.checkLoggedIn()
+        if self.checkLoggedIn() == False:
+            return
+
         self.connSock.send('257 \"%s\" is the working directory.\r\n' % (self.workingDirectory[len(serverDirectory):]))
 
     def LIST(self, command):
-        self.checkLoggedIn()
+        if self.checkLoggedIn() == False:
+            return
         self.binaryFile = False
 
-        if self.dataConnOpen:
+        if self.setPortPasv:
             self.connSock.send('150 Opening data connection. Sending directory list.\r\n')    
             self.open_dataSocket()
 
@@ -423,11 +456,11 @@ class clientThread(threading.Thread):
                      str(itemStat[ST_UID]) + ' ' + str(itemStat[ST_GID]) + ' ' + \
                      str(itemStat[ST_SIZE]) + ' ' + timestamp + ' ' + os.path.basename(itemPath) + '\r\n'
                      
-    
         return itemString
 
     def MKD(self, command):
-        self.checkLoggedIn()
+        if self.checkLoggedIn() == False:
+            return
 
         directoryString = command[4:-2]
         index = directoryString.find('\\')
@@ -439,13 +472,15 @@ class clientThread(threading.Thread):
         if not os.path.exists(dirPath):
             os.makedirs(dirPath)
             self.connSock.send('257 \"%s\\%s\" created.\r\n'\
-                    % (self.workingDirectory[len(serverDirectory):],command[4:]))
+                    % (self.workingDirectory[len(serverDirectory):],command[4:-2]))
         else:
             self.connSock.send('550 Requested action not taken. \"%s\\%s\" already exists.\r\n'\
-                    % (self.workingDirectory[len(serverDirectory):],command[4:]) )
+                    % (self.workingDirectory[len(serverDirectory):],command[4:-2]) )
             
     def RMD(self, command):
-        self.checkLoggedIn()
+        if self.checkLoggedIn() == False:
+            return
+
         if command[5:] != '':
             directoryString = command[4:-2]
 
@@ -465,7 +500,8 @@ class clientThread(threading.Thread):
             self.connSock.send('550 Requested action not taken. Permission denied.\r\n')
 
     def NOOP(self, command):
-        self.checkLoggedIn()
+        if self.checkLoggedIn() == False:
+            return
         self.connSock.send('200 Command okay.\r\n')
 
     def AUTH(self, command):

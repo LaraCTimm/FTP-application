@@ -69,8 +69,10 @@ class clientLogic():
 
     def PASV(self):
         self.clientSock.send('PASV\r\n')
-        reply = self.clientSock.recv(1024)
+        reply = self.clientSock.recv(1024)        
         print 'Response:', reply
+        if reply[0] == '5':
+            return
         openBracketIndex = reply.find('(')
         closeBracketIndex = reply.find(')')
 
@@ -114,7 +116,7 @@ class clientLogic():
         self.clientSock.send('MODE '+transferMode +'\r\n')
         self.getReply()
 
-    # service commands -----------------------------------------------
+# service commands --------------------------------------------------
 
     def RETR(self, fileName):
         # receive a copy file over data connection
@@ -256,7 +258,7 @@ class clientLogic():
             if directoryArray[i].strip() == '':
                 del directoryArray[i]
             
-        print 'Number of items in directory:',len(directoryArray)
+        print 'Number of items in directory:', len(directoryArray)
         print "Done Receiving"
 
         if len(directoryArray) == 0:
