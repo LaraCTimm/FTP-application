@@ -55,9 +55,9 @@ def doubleClick(object):
 		terminalText.pack()
 		showDirContents()
 	else:
-		terminalText.insert('1.0','file ' + object + '\n')
-		terminalText.pack()
 		fileToSend = mypath + '\\' + object
+		terminalText.insert('1.0','Send file: ' + fileToSend + '\n')
+		terminalText.pack()
 		#																		<------------------------- Upload file 'fileToSend'
 
 
@@ -66,6 +66,7 @@ def run(event):
 
 def showDirContents():
 	global mypath
+	localAdd = Label(window, text=mypath,bg='black',fg='white',width=60,anchor=E).grid(column=2,row=2,columnspan=3)
 	localFrame.delete("all")
 	newlist = []
 	newerlist = []
@@ -73,8 +74,12 @@ def showDirContents():
 	goUp = "..."
 	contents.insert(0,goUp)
 	for index,x in enumerate(contents):
-		newlist.append(Button(window, text=x, relief='flat',command=lambda x = x: doubleClick(x)))
-		newerlist.append(localFrame.create_window(10, 10+index*20, anchor=NW, window=newlist[index]))
+		if "." not in x or x == "...":
+			newlist.append(Button(window, text=x, relief='flat',command=lambda x = x: doubleClick(x),bg='blue'))
+			newerlist.append(localFrame.create_window(10, 10+index*20, anchor=NW, window=newlist[index]))
+		else:
+			newlist.append(Button(window, text=x, relief='flat',command=lambda x = x: doubleClick(x)))
+			newerlist.append(localFrame.create_window(10, 10+index*20, anchor=NW, window=newlist[index]))
 
 # START SERVER
 # *TO DO* Check if server is running OR exit server with exit of app
@@ -90,6 +95,8 @@ def login():
 		terminalText.insert('1.0', "Entered password:" + passEntry.get()+"\n")
 		terminalText.pack()
 		terminalText.insert('1.0', "Entered address:" + addressEntry.get()+"\n")
+		terminalText.pack()
+		terminalText.insert('1.0', "Entered port:" + portEntry.get()+"\n")
 		terminalText.pack()
 		
 		# 										<----------------------------------------------- Run log in  with USR and PASS, etc
@@ -112,43 +119,40 @@ addressEntry = Entry(window)
 addressEntry.insert(0,"ServerAddress")
 addressEntry.grid(row=0,column=2,padx=10,pady=10)
   
+# Port Entry
+portEntry = Entry(window)
+portEntry.insert(0,"Port")
+portEntry.grid(row = 0, column=3,padx=5,pady=10)
+
 # Connect Button
 connectBtn = Button(window, text="CONNECT", command=login)
-connectBtn.grid(row=0,column=3,padx=50)
+connectBtn.grid(row=0,column=4,padx=50)
 
-serverFrame = Frame(width=fileSysX, height=fileSysY,  colormap="new",relief = SUNKEN,borderwidth=2,bg='')
-serverFrame.grid(row=1,column=0,columnspan=2,padx=framePadX,pady=framePadY)
+# Server Title
+serverTitle = Label(window, text="Files Hosted Remotely").grid(column=0,row=1)
+serverAdd = Label(window, text="",bg='black',fg='white',width=42).grid(column=0,row=2,columnspan=2)
+# Server Title
+localTitle = Label(window, text="Files Hosted Locally").grid(column=2,row=1)
+localAdd = Label(window, text=mypath,bg='black',fg='white',width=60).grid(column=2,row=2,columnspan=3)
+
+serverFrame = Canvas(width=fileSysX, height=fileSysY,relief = SUNKEN,borderwidth=2)
+serverFrame.grid(row=3,column=0,columnspan=2,padx=framePadX,pady=framePadY)
 
 
 terminalFrame = Frame(colormap="new",relief = SUNKEN,borderwidth=2,bg='black')
-terminalFrame.grid(row=2,column=0,columnspan=4,padx=framePadX,pady=framePadY)
-terminalText = Text(terminalFrame,bg='black',fg='white',height=14,width=75)
+terminalFrame.grid(row=4,column=0,columnspan=5,padx=framePadX,pady=framePadY)
+terminalText = Text(terminalFrame,bg='black',fg='white',height=14,width=90)
 terminalText.pack()
 
-terminalEntry = Entry(window,width=102,bg='black',fg='white')
+terminalEntry = Entry(window,width=120,bg='black',fg='white')
 terminalEntry.insert(0,">Enter custon command>>")
-terminalEntry.grid(row=3,column=0,columnspan=4)
+terminalEntry.grid(row=5,column=0,columnspan=5)
 terminalEntry.bind('<Return>',run)
 
-
-
-localFrame = Canvas(width=fileSysX, height=fileSysY,relief = SUNKEN,borderwidth=2)
-localFrame.grid(row=1,column=2,columnspan=2,padx=framePadX,pady=framePadY)
+localFrame = Canvas(width=fileSysX*1.4, height=fileSysY,relief = SUNKEN,borderwidth=2)
+localFrame.grid(row=3,column=2,columnspan=3,padx=framePadX,pady=framePadY)
 
 showDirContents()
 	
-#button1 = Button(window, text="hey", relief='flat',command=lambda: doubleClick('hey'))
-#button1_window = localFrame.create_window(10, 10, anchor=NW, window=button1)
 
 window.mainloop()
-
-
-
-
-# buffer = io.StringIO()
-
-# print("something", file=buffer)
-# print("something more", file=buffer)
-
-# output = buffer.getvalue()
-# text.insert(END, output)
