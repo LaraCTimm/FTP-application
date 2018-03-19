@@ -1,21 +1,80 @@
 from Tkinter import *
+import tkinter.tix
 import tkMessageBox
 import os
+import idlelib
+from os import listdir
+from os.path import isfile, join
+
+mypath = os.getcwd()
+print mypath
 
 framePadX=3
 framePadY=3
 fileSysX = 300
 fileSysY=360
 
-window = Tk()
-window.title("FTP Application")
+fileToSend = ""
 
-folderContent = {	'filename': 'example',
-					'filetype': 'folder',
-					'filesize': 1024}
+slashcount = 0
+
+window = tkinter.tix.Tk()
+window.title("FTP Application")
+window.resizable(0,0)
+
+# FINDS LAST BACKSLASH AND REMOVES EVERYTHING AFTER IT
+def getCdup():
+	global mypath
+	slashcount = mypath.count('\\')
+	total = len(mypath)
+	count = 0
+	slashindex = 0
+	index = -1
+	for char in mypath:
+		index = index + 1
+		if char == '\\':
+			count = count + 1
+			if count == slashcount:
+				slashindex = index
+	mypath = mypath[:-(total-slashindex)]
+	print mypath
+
+
+
+def doubleClick(object):
+	global mypath
+	# if starts with . remove from mypath list
+	if object == '...':
+		getCdup()
+		terminalText.insert('1.0', 'Changed directory to ' + mypath + '\n')
+		terminalText.pack()
+		showDirContents()
+	elif "." not in object:
+		mypath = mypath + '\\' + object
+		terminalText.insert('1.0', 'Changed directory to ' + mypath + '\n')
+		terminalText.pack()
+		showDirContents()
+	else:
+		terminalText.insert('1.0','file ' + object + '\n')
+		terminalText.pack()
+		fileToSend = mypath + '\\' + object
+		#																		<------------------------- Upload file 'fileToSend'
+
 
 def run(event):
 	os.system(event.widget.get())
+
+def showDirContents():
+	global mypath
+	localFrame.delete("all")
+	newlist = []
+	newerlist = []
+	contents = os.listdir(mypath)
+	goUp = "..."
+	contents.insert(0,goUp)
+	for index,x in enumerate(contents):
+		newlist.append(Button(window, text=x, relief='flat',command=lambda x = x: doubleClick(x)))
+		newerlist.append(localFrame.create_window(10, 10+index*20, anchor=NW, window=newlist[index]))
 
 # START SERVER
 # *TO DO* Check if server is running OR exit server with exit of app
@@ -32,11 +91,8 @@ def login():
 		terminalText.pack()
 		terminalText.insert('1.0', "Entered address:" + addressEntry.get()+"\n")
 		terminalText.pack()
-		#print 'Entered username:' + userEntry.get() + '\n'
-		#print 'Entered password:' + passEntry.get() + '\n'
-		#print 'Entered address:' + addressEntry.get() + '\n'
 		
-		# To be replaced with login functions
+		# 										<----------------------------------------------- Run log in  with USR and PASS, etc
 
 
 # TKINTER WIDGET SETUP
@@ -63,20 +119,26 @@ connectBtn.grid(row=0,column=3,padx=50)
 serverFrame = Frame(width=fileSysX, height=fileSysY,  colormap="new",relief = SUNKEN,borderwidth=2,bg='')
 serverFrame.grid(row=1,column=0,columnspan=2,padx=framePadX,pady=framePadY)
 
-localFrame = Frame(width=fileSysX, height=fileSysY, colormap="new",relief = SUNKEN,borderwidth=2,bg='')
-localFrame.grid(row=1,column=2,columnspan=2,padx=framePadX,pady=framePadY)
 
 terminalFrame = Frame(colormap="new",relief = SUNKEN,borderwidth=2,bg='black')
 terminalFrame.grid(row=2,column=0,columnspan=4,padx=framePadX,pady=framePadY)
 terminalText = Text(terminalFrame,bg='black',fg='white',height=14,width=75)
 terminalText.pack()
-#terminalText.insert('1.0', "Just a new text Widget\nin two lines\n")
-#terminalText.pack()
 
 terminalEntry = Entry(window,width=102,bg='black',fg='white')
 terminalEntry.insert(0,">Enter custon command>>")
 terminalEntry.grid(row=3,column=0,columnspan=4)
 terminalEntry.bind('<Return>',run)
+
+
+
+localFrame = Canvas(width=fileSysX, height=fileSysY,relief = SUNKEN,borderwidth=2)
+localFrame.grid(row=1,column=2,columnspan=2,padx=framePadX,pady=framePadY)
+
+showDirContents()
+	
+#button1 = Button(window, text="hey", relief='flat',command=lambda: doubleClick('hey'))
+#button1_window = localFrame.create_window(10, 10, anchor=NW, window=button1)
 
 window.mainloop()
 
