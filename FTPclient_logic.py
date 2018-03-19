@@ -1,22 +1,26 @@
 import socket
 import sys
 import os
-from datetime import datetime
 
 class clientLogic():
     def __init__(self, servIP):
         self.locIP = socket.gethostbyname(socket.gethostname())
+
+        # make command connection with server
         self.servIP = servIP
         self.servPort = 21
         self.clientSock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.clientSock.connect((self.servIP, self.servPort))
+
+        # set default values
         self.binaryFile = False
         self.passive = True
-        self.passiveServerPort = self.servPort
-        self.passiveServerIP = self.servIP
+        self.passiveServerPort = ''
+        self.passiveServerIP = ''
         self.baseDirectory = os.path.abspath('./clientDirectory')
         self.calledPortPasv = False
 
+    # NEED TO SET THIS UP TO DEAL WITH REPLIES THAT EXPECT OTHER REPLIES ##########################
     def getReply(self):
         reply = self.clientSock.recv(1024)
         print 'Response:', reply
@@ -25,42 +29,55 @@ class clientLogic():
         if reply[:2] == '221':
             self.clientSock.close()
 
- # access control commands ---------------------------------------
+    # ACCESS CONTROL COMMANDS ------------------------------------------------------------------
 
     def USER(self, username):
-        self.clientSock.send('USER '+username + '\r\n')
+        # send username to server
+
+        self.clientSock.send('USER '+ username + '\r\n')
         self.getReply()
 
     def PASS(self, password):
+        # send password to server for account authentication
+
         self.clientSock.send('PASS '+password + '\r\n')
         self.getReply()
 
     def CWD(self, directory):
+        # tell server which directory you want to change to 
+
         self.clientSock.send('CWD ' + directory + '\r\n')
         self.getReply()
     
     def CDUP(self):
+        # tell the server to move up one directory
+
         self.clientSock.send('CDUP\r\n')
         self.getReply()
 
     def QUIT(self):
+        # tell the server to close the client connection
+
         self.clientSock.send('QUIT\r\n')
         self.getReply()
 
-# transfer parameter commands -----------------------------------
+    # TRANSFER PARAMETER COMMANDS --------------------------------------------------------------
 
     def PORT(self, ipAddr, port):
+        # specifies and sets the address/port to be used in the data connection
+
         IPChunks = ipAddr.split('.')
-        byteU = int(port / 256)
+        byteU = int(port / 256)     # convert port to base 2
         byteL = port % 256
 
         connectionString = '%s,%i,%i' % (','.join(IPChunks[:4]), byteU, byteL)
         self.passive = False
 
+        # create and listen on port for data connection from server
         self.activeSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.activeSocket.bind((ipAddr, port))
         self.activeSocket.listen(1)
-        self.clientSock.send('PORT '+connectionString +'\r\n')
+        self.clientSock.send('PORT '+ connectionString +'\r\n')
 
         print 'Port connection opened at address %s:%u\n' % (ipAddr, port)
 
@@ -68,19 +85,23 @@ class clientLogic():
         self.getReply()
 
     def PASV(self):
+        # sends a request to server to listen on a port (other than default), and stores 
+        #      the resultant reply for opening data connection
+
         self.clientSock.send('PASV\r\n')
         reply = self.clientSock.recv(1024)        
         print 'Response:', reply
-        if reply[0] == '5':
+        if reply[0] == '5':         # if the PASV command fails don't carry on
             return
         openBracketIndex = reply.find('(')
         closeBracketIndex = reply.find(')')
 
+        # recreate the server address from the reply
         connectionString = reply[openBracketIndex+1:-(len(reply) - closeBracketIndex)]
-        print connectionString
         rec = connectionString.split(',')
         self.passiveServerIP = '.'.join(rec[:4])
 
+        # recreate the passive server port from the reply
         byteU = int(rec[4])
         byteL = int(rec[5])
         self.passiveServerPort = 256*byteU + byteL
@@ -91,6 +112,7 @@ class clientLogic():
         self.passive = True
 
     def TYPE(self, fileName):
+        # send the server the type code for the data being transferred
 
         if fileName.find('.') != -1:
             if fileName.find('.txt') != -1 or \
@@ -103,52 +125,58 @@ class clientLogic():
                 self.binaryFile = True
                 self.clientSock.send('TYPE I\r\n')
         else:
-            print 'Specified type not recognised'
+            print 'Specified file type not recognised'
             return
         
         self.getReply()
 
     def STRU(self, structureCode):
+        # send file structure to the server
+
         self.clientSock.send('STRU '+structureCode +'\r\n')
         self.getReply()
 
     def MODE(self, transferMode):
+        # send data transmission mode to server
+
         self.clientSock.send('MODE '+transferMode +'\r\n')
         self.getReply()
 
-# service commands --------------------------------------------------
+    # SERVICE COMMANDS -------------------------------------------------------------------------
 
     def RETR(self, fileName):
         # receive a copy file over data connection
     
+        # send name of file to retrieve to server
         self.clientSock.send('RETR '+fileName +'\r\n')
 
+        # if a data connection type isn't specified, get the expected reply from the server
         if not self.calledPortPasv:
             self.getReply()
             return
 
-        self.open_dataSocket()
+        self.open_dataSocket()      # open the data socket
 
         filePath = os.path.join(self.baseDirectory, fileName)
         
+        # open the file to write to, open mode depends on the file type set by TYPE command
         if self.binaryFile:
             requestedFile = open(filePath,'wb')
         else :
             requestedFile = open(filePath,'w')
 
-        dataChunk = self.dataStreamSocket.recv(1024)
-        while (dataChunk):
+        dataChunk = self.dataStreamSocket.recv(1024)    # receive from the data socket
+        while (dataChunk):                              # while more data is being received
             print "Receiving..."
-            requestedFile.write(dataChunk)
-            dataChunk = self.dataStreamSocket.recv(1024)
+            requestedFile.write(dataChunk)                  # write received data to file
+            dataChunk = self.dataStreamSocket.recv(1024)    # receive more data 
 
         requestedFile.close()
         self.close_dataSocket()
         print "Done Receiving"
-        self.dataStreamSocket.close()
 
         response = self.clientSock.recv(1024)
-        print response
+        print 'Response:', response
 
         if response[:3] == '226':
             return

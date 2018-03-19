@@ -2,24 +2,16 @@ import socket
 import threading
 import os
 import sys
-#from pathlib2 import Path
 import time
-from stat import * 
-import shutil # library used in RMD
-
-# import stat
-# import urllib, json
-
-# data = json.loads(urllib.urlopen("http://ip.jsontest.com/").read())
-# print data["ip"]
-
-# from datetime import datetime
+from stat import *  # library used in LIST
+import shutil       # library used in RMD
 
 locIP = socket.gethostbyname(socket.gethostname())  # get local IP of server PC
 locPort = 21                                        # default port for FTP command connection
 
 # this directory must exist and should contain a directory for each registered user
-serverDirectory = os.path.abspath('./serverDirectory') 
+serverDirectory = os.path.abspath('./serverDirectory')
+
 #---------------------------------------------------------------------------
 
 class serverThread(threading.Thread):
@@ -180,6 +172,7 @@ class clientThread(threading.Thread):
     def CDUP(self, command):
         if self.loggedIn == False: 
             return
+
         # check that the client isnt going above their base directory
         highestDirectory = os.path.join(serverDirectory, self.username)
         if self.workingDirectory != highestDirectory:
@@ -199,7 +192,7 @@ class clientThread(threading.Thread):
         else: 
             return True
 
-    # transfer parameter commands ----------------------------------------------------------------------
+    # TRANSFER PARAMETER COMMANDS ----------------------------------------------------------------------
 
     def PORT(self, command): # ACTIVE MODE ###############
         if self.checkLoggedIn() == False:
@@ -283,7 +276,7 @@ class clientThread(threading.Thread):
         else:
             self.connSock.send('504 Command not implemented for that parameter.\r\n')
 
-    # service commands ---------------------------------------------------------------------------------
+    # SERVICE COMMANDS ---------------------------------------------------------------------------------
 
     def RETR(self, command):    # transfer a copy file to client 
 
@@ -350,7 +343,7 @@ class clientThread(threading.Thread):
             filePath = os.path.join(self.workingDirectory, fileName)
             requestedFile = None
 
-            # open the file to write, open mode depends on the file type set by TYPE command
+            # open the file to write to, open mode depends on the file type set by TYPE command
             if self.binaryFile:
                 requestedFile = open(filePath, 'wb')
             else:
