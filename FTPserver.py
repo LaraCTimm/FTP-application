@@ -155,6 +155,10 @@ class clientThread(threading.Thread):
 
         directoryString = command[4:-2]
 
+        if directoryString == self.workingDirectory.split('\\')[-2]:
+            self.CDUP('dummy string')
+            return
+
         # check for variations in commands made by different clients
         index = directoryString.find('\\')
         if index != -1:
