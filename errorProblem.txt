@@ -22,25 +22,7 @@ Response: 227 Entering passive mode (10,30,3,185,200,45).
 
 Input message: type .txt
 
-------------------------------------------------------------------------------
-other thing to fix fileZilla connecting to our server
 
-C:\Users\l_tim\Google Drive\1 Electrical 4th Year\Networks\FTP_project>python FTPserver.py
-Listening on 10.30.3.185 : 21
-Press Enter to end...
-Client connected...
-Request: QUIT
-
-Error: 221 Service closing control connection.
-Client disconnected...
-Client connected...
-Request: AUTH TLS
-
-Error: 'clientThread' object has no attribute 'AUTH'
-Client connected...
-Request: AUTH TLS
-
-Error: 'clientThread' object has no attribute 'AUTH'
 
 
 
