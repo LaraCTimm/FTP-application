@@ -178,6 +178,8 @@ class clientLogic():
         response = self.clientSock.recv(1024)
         print 'Response:', response
 
+        # if file transfer was successful then exit otherwise delete the file 
+        #       created in the server directory that isn't right
         if response[:3] == '226':
             return
         elif response[:3] == '451' or response[:3] == '550':
@@ -189,10 +191,11 @@ class clientLogic():
             self.getReply()
 
     def STOR(self, fileName):
-        
         # send data across data connection to store as file on server
+        
         filePath = os.path.join(self.baseDirectory, fileName)
 
+        # only send a STOR command if the file exists on the client
         if os.path.exists(filePath):
             self.clientSock.send('STOR '+fileName +'\r\n')
         else:
@@ -205,6 +208,7 @@ class clientLogic():
 
         self.open_dataSocket()
         
+        # open the file to read, open mode depends on the file type set by TYPE command
         if self.binaryFile:
             requestedFile = open(filePath,'rb')
         else :
@@ -223,7 +227,7 @@ class clientLogic():
         print "Done Sending"
 
         response = self.clientSock.recv(1024)
-        print response
+        print 'Response:', response
 
         if response[:3] == '226':
             return
@@ -234,53 +238,64 @@ class clientLogic():
             self.getReply()
 
     def open_dataSocket(self):
-
+        # passive mode -------------------------------------------------------------------
         if self.passive:
+            # open the data socket, connect to server passive port and receive
             self.dataStreamSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM) 
             self.dataStreamSocket.connect((self.passiveServerIP, self.passiveServerPort))
             reply = self.clientSock.recv(1024)
             print 'Response:', reply 
             
-            if not (reply[:3] == '150'):
+            if not (reply[:3] == '150'):    # if the connection is not made, exit the function
                 return
+        # active mode --------------------------------------------------------------------
         else:
             reply = self.clientSock.recv(1024)
             print 'Response:', reply 
             self.dataStreamSocket, addr = self.activeSocket.accept()
     
     def close_dataSocket(self):
+        # if not passive close the active socket, close the data stream
         if self.passive == False:
             self.activeSocket.close()
         self.dataStreamSocket.close()
         self.calledPortPasv = False
     
     def DELE(self, fileName):
+        # send delete command to server
+
         self.clientSock.send('DELE ' + fileName +'\r\n')
         self.getReply()
     
     def PWD(self):
+        # ask the server to send the current working directory
         self.clientSock.send('PWD\r\n')
         self.getReply()
 
     def LIST(self):
+        # ask the server for a list of the files in the current working directory
+        self.clientSock.send('LIST\r\n')
 
-        self.clientSock.send('LIST \r\n')
-
+        # ensure the server is setup to make a data connection
         if not self.calledPortPasv:
             self.getReply()
             return
 
-        self.open_dataSocket()
+        self.open_dataSocket()      # open the data connection
 
         directoryArray = [] 
         directoryItem = self.dataStreamSocket.recv(1024)
         directories = ''
 
+        # while there is incoming data, add the data to a string called directories
         while (directoryItem):
             directories += directoryItem
             directoryItem = self.dataStreamSocket.recv(1024)
-            
+        
+        # once all the data is recieved, split the string and form an arrat
         directoryArray = directories.split('\n')
+        # if there is a blank array entry, delete it
+        # print out the directories to terminal
         for i in range(0,len(directoryArray)):
             print directoryArray[i]
             if directoryArray[i].strip() == '':
@@ -292,11 +307,13 @@ class clientLogic():
         if len(directoryArray) == 0:
             print 'Directory empty...'
 
-        self.close_dataSocket()
+        self.close_dataSocket()     # close the data connection
 
         self.getReply()
     
     def MKD(self, dirName):
+        # instruct the server to make a directory with the name dirName
+
         self.clientSock.send('MKD ' + dirName +'\r\n')
         self.getReply()
     
@@ -310,9 +327,11 @@ class clientLogic():
         # else:
         #     print 'Invalid response.'
 
+        # instruct that server to delete the directory with name dirName
         self.clientSock.send('RMD ' + dirName +'\r\n')
         self.getReply()
     
     def NOOP(self):
+        # ask the directory to send an okay response
         self.clientSock.send('NOOP\r\n')
         self.getReply()
