@@ -31,6 +31,7 @@ fileToSend = ""
 slashcount = 0
 customCommand = ""
 selectedLocal = ""
+selectedRemote = ""
 
 
 # Set up window variables
@@ -57,17 +58,52 @@ def getCdup():
 	print mypath
 
 # Function to delete local file
-def delLocal():
+def delLocalButton():
 	global selectedLocal
-
-	if(len(selectedLocal) < 1 and os.path.isfile(selectedLocal)):
-		tkMessageBox.showinfo("Deletion Error", "Please select.")
+	if(len(selectedLocal) < 1):
+		tkMessageBox.showinfo("Deletion Error", "No file selected!")
+	elif os.path.isfile(selectedLocal) == False:
+		tkMessageBox.showinfo("Deletion Error", "Directories cannot be deleted. \n Please select a file.")
 	else:
-		print 'file will be deleted'
+		print selectedLocal + ' file will be deleted'
+		#																				<---------------------- Delete file from local
 
 # Function to upload local file
-def uplLocal():
+def uplLocalButton():
+	global selectedLocal
+	if(len(selectedLocal) < 1):
+		tkMessageBox.showinfo("Upload Error", "No file selected!")
+	elif os.path.isfile(selectedLocal) == False:
+		tkMessageBox.showinfo("Upload Error", "Directories cannot be Uploaded. \n Please select a file.")
+	else:
+		print selectedLocal + ' file will be uploaded'
+		#																				<---------------------- Upload file from local
+
 	print 'file will be uploaded'
+
+# Function to delete server file
+def delServButton():
+	global selectedRemote
+	if(len(selectedRemote) < 1):
+		tkMessageBox.showinfo("Deletion Error", "No file selected!")
+	elif os.path.isfile(selectedRemote) == False:
+		tkMessageBox.showinfo("Deletion Error", "Directories cannot be deleted. \n Please select a file.")
+	else:
+		print selectedRemote + ' file will be deleted'
+		#																				<---------------------- Delete file from server
+
+# Function to upload local file
+def dnlServButton():
+	global selectedRemote
+	if(len(selectedRemote) < 1):
+		tkMessageBox.showinfo("Download Error", "No file selected!")
+	elif os.path.isfile(selectedRemote) == False:
+		tkMessageBox.showinfo("Download Error", "Directories cannot be downloaded. \n Please select a file.")
+	else:
+		print selectedRemote + ' file will be downloaded'
+		#																				<---------------------- Download file from server
+
+	print 'file will be downloaded'
 
 # Function called when directory or file is selected
 def doubleClick(object):
@@ -183,10 +219,10 @@ def showDirContents():
 	contents.insert(0,goUp)
 	for index,x in enumerate(contents):
 		if "." not in x or x == "...":
-			newlist.append(Button(window, text=x, relief='flat',command=lambda x = x: doubleClick(x),bg='blue'))
+			newlist.append(Button(window, text='-->' + x, relief='flat',command=lambda x = x: doubleClick(x)))
 			newerlist.append(localFrame.create_window(10, 10+index*20, anchor=NW, window=newlist[index]))
 		else:
-			newlist.append(Button(window, text=x, relief='flat',command=lambda x = x: doubleClick(x)))
+			newlist.append(Button(window, text='    ' + x, relief='flat',command=lambda x = x: doubleClick(x)))
 			newerlist.append(localFrame.create_window(10, 10+index*20, anchor=NW, window=newlist[index]))
 
 # START SERVER
@@ -194,7 +230,7 @@ def showDirContents():
 #os.system("start cmd /k python FTPserver.py")
 
 # START CLIENT
-def login():
+def connectButton():
 	if userEntry.get() == 'Username' or passEntry.get() == 'Password' or addressEntry.get() == 'ServerAddress':
 		tkMessageBox.showinfo("Login Error", "Please enter a username, password and address.")
 	else:
@@ -285,19 +321,25 @@ portEntry.insert(0,"Port")
 portEntry.grid(row = 0, column=3,padx=5,pady=10)
 
 # Connect Button
-connectBtn = Button(window, text="CONNECT", command=login)
+connectBtn = Button(window, text="CONNECT", command=connectButton)
 connectBtn.grid(row=0,column=4,padx=50)
 
 # Server Title
 serverTitle = Label(window, text="Files Hosted Remotely").grid(column=2,row=1)
 serverAdd = Label(window, text="",bg='black',fg='white',width=85).grid(column=2,row=2,columnspan=3)
+serverBtnFrame = Frame(window)
+servDel = Button(serverBtnFrame,text="DEL",command=delServButton)
+servDnl = Button(serverBtnFrame,text="DWNL",command=dnlServButton)
+serverBtnFrame.grid(row=1,column=4,sticky="nsew", padx=10)
+servDel.pack(side="right")
+servDnl.pack(side="right")
 
 # Local Title
 localTitle = Label(window, text="Files Hosted Locally").grid(column=0,row=1)
 localAdd = Label(window, text="",bg='black',fg='white',width=65).grid(column=0,row=2,columnspan=2)
 localBtnFrame = Frame(window)
-localDel = Button(localBtnFrame,text="DEL",command=delLocal)
-localUpl = Button(localBtnFrame,text="UPL",command=uplLocal)
+localDel = Button(localBtnFrame,text="DEL",command=delLocalButton)
+localUpl = Button(localBtnFrame,text="UPL",command=uplLocalButton)
 localBtnFrame.grid(row=1,column=1,sticky="nsew", padx=10)
 localDel.pack(side="right")
 localUpl.pack(side="right")
