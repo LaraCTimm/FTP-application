@@ -81,7 +81,7 @@ def uplLocalButton():
 
 	print 'file will be uploaded'
 
-# Function to delete server file
+# Function to delete remote file
 def delServButton():
 	global selectedRemote
 	if(len(selectedRemote) < 1):
@@ -93,7 +93,7 @@ def delServButton():
 		print selectedRemote + ' file will be deleted'
 		#																				<---------------------- Delete file from server
 
-# Function to upload local file
+# Function to download remote file
 def dnlServButton():
 	global selectedRemote
 	if(len(selectedRemote) < 1):
@@ -106,6 +106,12 @@ def dnlServButton():
 
 	print 'file will be downloaded'
 
+# Function to create directory on the server
+def mkdrServButton():
+	print 'make dir: ' + servDir.get()
+	directoryName = servDir.get()
+		#																				<---------------------- make directory
+
 
 # Clear entry functions
 def userClear(event):
@@ -117,7 +123,9 @@ def addrClear(event):
 def portClear(event):
 	portEntry.delete(0, END)
 def termClear(event):
-	terminalEntry.delete(0, END)	
+	terminalEntry.delete(0, END)
+def newDirClear(event):
+	servDir.delete(0, END)	
 
 # Function called when directory or file is selected
 def doubleClick(object):
@@ -355,9 +363,16 @@ serverAdd = Label(window, text="",bg='black',fg='white',width=85).grid(column=2,
 serverBtnFrame = Frame(window)
 servDel = Button(serverBtnFrame,text="DEL",command=delServButton)
 servDnl = Button(serverBtnFrame,text="DWNL",command=dnlServButton)
+servDir = Entry(serverBtnFrame)
+servDir.insert(0,'New Directory Name')
+servMkdr = Button(serverBtnFrame,text="CREATE",command=mkdrServButton)
 serverBtnFrame.grid(row=1,column=4,sticky="nsew", padx=10)
 servDel.pack(side="right")
 servDnl.pack(side="right")
+servMkdr.pack(side="right")
+servDir.pack(side="right")
+servDir.bind('<Button-1>', newDirClear)
+
 
 # Local Title
 localTitle = Label(window, text="Files Hosted Locally").grid(column=0,row=1)
