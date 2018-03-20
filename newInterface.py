@@ -1,28 +1,39 @@
 from Tkinter import *
+import Tkinter as tk
 import Tix
 import tkMessageBox
 import os
 import idlelib
 from os import listdir
 from os.path import isfile, join
+import ttk
+from demopanels import MsgPanel, SeeDismissPanel
 
+# Constants for formatting file sizes
+KB = 1024.0
+MB = KB * KB
+GB = MB * KB
+
+# Get initial path
 mypath = os.getcwd()
-print mypath
 
+# Interface constants
 framePadX=3
 framePadY=3
 fileSysX = 300
 fileSysY=360
 
+# Initialised variables
 fileToSend = ""
-
 slashcount = 0
 
+# Set up window variables
 window = Tix.Tk()
 window.title("FTP Application")
 window.resizable(0,0)
 
-# FINDS LAST BACKSLASH AND REMOVES EVERYTHING AFTER IT
+# Finds last backslach and removes everything after
+# to get new directory
 def getCdup():
 	global mypath
 	slashcount = mypath.count('\\')
@@ -40,7 +51,7 @@ def getCdup():
 	print mypath
 
 
-
+# Function called when directory or file is selected
 def doubleClick(object):
 	global mypath
 	# if starts with . remove from mypath list
@@ -60,10 +71,11 @@ def doubleClick(object):
 		terminalText.pack()
 		#																		<------------------------- Upload file 'fileToSend'
 
-
+# Run terminal function
 def run(event):
 	os.system(event.widget.get())
 
+# List contents in directory
 def showDirContents():
 	global mypath
 	localAdd = Label(window, text=mypath,bg='black',fg='white',width=42,anchor=E).grid(column=0,row=2,columnspan=2)
@@ -102,6 +114,46 @@ def login():
 		# 										<----------------------------------------------- Run log in  with USR and PASS, etc
 
 
+
+
+
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+class App(tk.Frame):
+    def __init__(self, master, path):
+        tk.Frame.__init__(self, master)
+        self.tree = ttk.Treeview(self)
+        ysb = ttk.Scrollbar(self, orient='vertical', command=self.tree.yview)
+        xsb = ttk.Scrollbar(self, orient='horizontal', command=self.tree.xview)
+        self.tree.configure(yscroll=ysb.set, xscroll=xsb.set)
+        self.tree.heading('#0', text=path, anchor='w')
+
+        abspath = os.path.abspath(path)
+        root_node = self.tree.insert('', 'end', text=abspath, open=True)
+        self.process_directory(root_node, abspath)
+
+        self.tree.grid(row=0, column=0)
+        ysb.grid(row=0, column=1, sticky='ns')
+        xsb.grid(row=1, column=0, sticky='ew')
+        self.grid()
+
+    def process_directory(self, parent, path):
+        for p in os.listdir(path):
+            abspath = os.path.join(path, p)
+            isdir = os.path.isdir(abspath)
+            oid = self.tree.insert(parent, 'end', text=p, open=False)
+            if isdir:
+                self.process_directory(oid, abspath)
+
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+
+
+
+
+
+
 # TKINTER WIDGET SETUP
 
 # Username Entry
@@ -131,28 +183,35 @@ connectBtn.grid(row=0,column=4,padx=50)
 # Server Title
 serverTitle = Label(window, text="Files Hosted Remotely").grid(column=2,row=1)
 serverAdd = Label(window, text="",bg='black',fg='white',width=60).grid(column=2,row=2,columnspan=3)
-# Server Title
+
+# Local Title
 localTitle = Label(window, text="Files Hosted Locally").grid(column=0,row=1)
 localAdd = Label(window, text=mypath,bg='black',fg='white',width=42).grid(column=0,row=2,columnspan=2)
 
+# Frame with server files
 serverFrame = Canvas(width=fileSysX*1.4, height=fileSysY,relief = SUNKEN,borderwidth=2)
 serverFrame.grid(row=3,column=2,columnspan=3,padx=framePadX,pady=framePadY)
 
-
+# Frame with terminal responses
 terminalFrame = Frame(colormap="new",relief = SUNKEN,borderwidth=2,bg='black')
 terminalFrame.grid(row=4,column=0,columnspan=5,padx=framePadX,pady=framePadY)
 terminalText = Text(terminalFrame,bg='black',fg='white',height=14,width=90)
 terminalText.pack()
 
+# Terminal Entry
 terminalEntry = Entry(window,width=120,bg='black',fg='white')
 terminalEntry.insert(0,">Enter custon command>>")
 terminalEntry.grid(row=5,column=0,columnspan=5)
 terminalEntry.bind('<Return>',run)
 
+# Frame with local files
 localFrame = Canvas(width=fileSysX, height=fileSysY,relief = SUNKEN,borderwidth=2)
 localFrame.grid(row=3,column=0,columnspan=2,padx=framePadX,pady=framePadY)
 
-showDirContents()
-	
+
+path_to_my_project = os.path.abspath('.')
+app = App(localFrame, path=path_to_my_project)
+
+#showDirContents()
 
 window.mainloop()
