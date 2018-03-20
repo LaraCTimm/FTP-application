@@ -294,6 +294,7 @@ class clientLogic():
         
         # once all the data is recieved, split the string and form an arrat
         directoryArray = directories.split('\n')
+
         # if there is a blank array entry, delete it
         # print out the directories to terminal
         for i in range(0,len(directoryArray)):
