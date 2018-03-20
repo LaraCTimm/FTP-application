@@ -66,7 +66,7 @@ def run(event):
 
 def showDirContents():
 	global mypath
-	localAdd = Label(window, text=mypath,bg='black',fg='white',width=60,anchor=E).grid(column=2,row=2,columnspan=3)
+	localAdd = Label(window, text=mypath,bg='black',fg='white',width=42,anchor=E).grid(column=0,row=2,columnspan=2)
 	localFrame.delete("all")
 	newlist = []
 	newerlist = []
@@ -129,14 +129,14 @@ connectBtn = Button(window, text="CONNECT", command=login)
 connectBtn.grid(row=0,column=4,padx=50)
 
 # Server Title
-serverTitle = Label(window, text="Files Hosted Remotely").grid(column=0,row=1)
-serverAdd = Label(window, text="",bg='black',fg='white',width=42).grid(column=0,row=2,columnspan=2)
+serverTitle = Label(window, text="Files Hosted Remotely").grid(column=2,row=1)
+serverAdd = Label(window, text="",bg='black',fg='white',width=60).grid(column=2,row=2,columnspan=3)
 # Server Title
-localTitle = Label(window, text="Files Hosted Locally").grid(column=2,row=1)
-localAdd = Label(window, text=mypath,bg='black',fg='white',width=60).grid(column=2,row=2,columnspan=3)
+localTitle = Label(window, text="Files Hosted Locally").grid(column=0,row=1)
+localAdd = Label(window, text=mypath,bg='black',fg='white',width=42).grid(column=0,row=2,columnspan=2)
 
-serverFrame = Canvas(width=fileSysX, height=fileSysY,relief = SUNKEN,borderwidth=2)
-serverFrame.grid(row=3,column=0,columnspan=2,padx=framePadX,pady=framePadY)
+serverFrame = Canvas(width=fileSysX*1.4, height=fileSysY,relief = SUNKEN,borderwidth=2)
+serverFrame.grid(row=3,column=2,columnspan=3,padx=framePadX,pady=framePadY)
 
 
 terminalFrame = Frame(colormap="new",relief = SUNKEN,borderwidth=2,bg='black')
@@ -149,8 +149,8 @@ terminalEntry.insert(0,">Enter custon command>>")
 terminalEntry.grid(row=5,column=0,columnspan=5)
 terminalEntry.bind('<Return>',run)
 
-localFrame = Canvas(width=fileSysX*1.4, height=fileSysY,relief = SUNKEN,borderwidth=2)
-localFrame.grid(row=3,column=2,columnspan=3,padx=framePadX,pady=framePadY)
+localFrame = Canvas(width=fileSysX, height=fileSysY,relief = SUNKEN,borderwidth=2)
+localFrame.grid(row=3,column=0,columnspan=2,padx=framePadX,pady=framePadY)
 
 showDirContents()
 	
