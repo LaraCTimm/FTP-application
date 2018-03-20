@@ -1,5 +1,5 @@
 from Tkinter import *
-import tkinter.tix
+import Tix
 import tkMessageBox
 import os
 import idlelib
@@ -18,7 +18,7 @@ fileToSend = ""
 
 slashcount = 0
 
-window = tkinter.tix.Tk()
+window = Tix.Tk()
 window.title("FTP Application")
 window.resizable(0,0)
 
