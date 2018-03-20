@@ -283,7 +283,7 @@ class clientLogic():
 
         self.open_dataSocket()      # open the data connection
 
-        directoryArray = [] 
+        self.directoryArray = [] 
         directoryItem = self.dataStreamSocket.recv(1024)
         directories = ''
 
@@ -293,19 +293,19 @@ class clientLogic():
             directoryItem = self.dataStreamSocket.recv(1024)
         
         # once all the data is recieved, split the string and form an arrat
-        directoryArray = directories.split('\n')
+        self.directoryArray = directories.split('\n')
 
         # if there is a blank array entry, delete it
         # print out the directories to terminal
-        for i in range(0,len(directoryArray)):
-            print directoryArray[i]
-            if directoryArray[i].strip() == '':
-                del directoryArray[i]
+        for i in range(0,len(self.directoryArray)):
+            print self.directoryArray[i]
+            if self.directoryArray[i].strip() == '':
+                del self.directoryArray[i]
             
-        print 'Number of items in directory:', len(directoryArray)
+        print 'Number of items in directory:', len(self.directoryArray)
         print "Done Receiving"
 
-        if len(directoryArray) == 0:
+        if len(self.directoryArray) == 0:
             print 'Directory empty...'
 
         self.close_dataSocket()     # close the data connection
