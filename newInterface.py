@@ -87,7 +87,8 @@ def delServButton():
 	if(len(selectedRemote) < 1):
 		tkMessageBox.showinfo("Deletion Error", "No file selected!")
 	elif os.path.isfile(selectedRemote) == False:
-		tkMessageBox.showinfo("Deletion Error", "Directories cannot be deleted. \n Please select a file.")
+		print selectedRemote + ' directory will be deleted'
+		#																				<---------------------- Delete directory from server
 	else:
 		print selectedRemote + ' file will be deleted'
 		#																				<---------------------- Delete file from server
@@ -105,22 +106,37 @@ def dnlServButton():
 
 	print 'file will be downloaded'
 
+
+# Clear entry functions
+def userClear(event):
+    userEntry.delete(0, END)
+def passClear(event):
+	passEntry.delete(0, END)
+def addrClear(event):
+	addressEntry.delete(0, END)
+def portClear(event):
+	portEntry.delete(0, END)
+def termClear(event):
+	terminalEntry.delete(0, END)	
+
 # Function called when directory or file is selected
 def doubleClick(object):
 	global mypath
 	# if starts with . remove from mypath list
 	global selectedLocal 
+	oldSelect = selectedLocal
 	selectedLocal = mypath + '\\' + object
 	if object == '...':
 		getCdup()
 		terminalText.insert('1.0', 'Changed directory to ' + mypath + '\n')
 		terminalText.pack()
 		showDirContents()
-	elif "." not in object:
-		mypath = mypath + '\\' + object
-		terminalText.insert('1.0', 'Changed directory to ' + mypath + '\n')
-		terminalText.pack()
-		showDirContents()
+	elif os.path.isfile(object) == False:
+		if oldSelect == selectedLocal:
+			mypath = mypath + '\\' + object
+			terminalText.insert('1.0', 'Changed directory to ' + mypath + '\n')
+			terminalText.pack()
+			showDirContents()
 	else:
 		fileToSend = mypath + '\\' + object
 		terminalText.insert('1.0','Send file: ' + fileToSend + '\n')
@@ -130,6 +146,7 @@ def doubleClick(object):
 # Run terminal function
 def run(event):
 	customCommand = event.widget.get()
+	terminalEntry.delete(0, END)	
 	terminalText.insert('1.0','cmd: ' + customCommand + '\n')
 	terminalText.pack()
 	#																			<------------------------ Custom command to be run
@@ -210,6 +227,9 @@ def run(event):
 # List contents in directory
 def showDirContents():
 	global mypath
+
+	folderImage = PhotoImage(file='folder.gif')
+
 	localAdd = Label(window, text=mypath,bg='black',fg='white',width=65,anchor=E).grid(column=0,row=2,columnspan=2)
 	localFrame.delete("all")
 	newlist = []
@@ -219,7 +239,7 @@ def showDirContents():
 	contents.insert(0,goUp)
 	for index,x in enumerate(contents):
 		if "." not in x or x == "...":
-			newlist.append(Button(window, text='-->' + x, relief='flat',command=lambda x = x: doubleClick(x)))
+			newlist.append(Button(window, text='-->' + x, relief='flat',compound="left",command=lambda x = x: doubleClick(x)))
 			newerlist.append(localFrame.create_window(10, 10+index*20, anchor=NW, window=newlist[index]))
 		else:
 			newlist.append(Button(window, text='    ' + x, relief='flat',command=lambda x = x: doubleClick(x)))
@@ -304,21 +324,26 @@ class App(tk.Frame):
 userEntry = Entry(window)
 userEntry.insert(0,"Username")
 userEntry.grid(row=0,column=0,padx=10,pady=10)
+userEntry.bind('<Button-1>', userClear)
 
 # Password Entry
 passEntry = Entry(window)
 passEntry.insert(0,"Password")
 passEntry.grid(row=0,column=1,padx=5,pady=10)
+passEntry.bind('<Button-1>', passClear)
 
 # Address Entry
 addressEntry = Entry(window)
 addressEntry.insert(0,"ServerAddress")
 addressEntry.grid(row=0,column=2,padx=10,pady=10)
+addressEntry.bind('<Button-1>', addrClear)
   
 # Port Entry
 portEntry = Entry(window)
 portEntry.insert(0,"Port")
 portEntry.grid(row = 0, column=3,padx=5,pady=10)
+portEntry.bind('<Button-1>', portClear)
+
 
 # Connect Button
 connectBtn = Button(window, text="CONNECT", command=connectButton)
@@ -359,7 +384,9 @@ terminalText.pack()
 terminalEntry = Entry(window,width=180,bg='black',fg='white')
 terminalEntry.insert(0,">Enter custom command>>")
 terminalEntry.grid(row=5,column=0,columnspan=5)
+terminalEntry.bind('<Button-1>', termClear)
 terminalEntry.bind('<Return>',run)
+
 
 # Frame with local files
 localFrame = Canvas(width=fileSysX*1.5, height=fileSysY,relief = SUNKEN,borderwidth=2)
