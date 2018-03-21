@@ -44,18 +44,19 @@ window.resizable(0,0)
 def getCdup():
 	global mypath
 	slashcount = mypath.count('\\')
-	total = len(mypath)
-	count = 0
-	slashindex = 0
-	index = -1
-	for char in mypath:
-		index = index + 1
-		if char == '\\':
-			count = count + 1
-			if count == slashcount:
-				slashindex = index
-	mypath = mypath[:-(total-slashindex)]
-	print mypath
+	if slashcount > 2:
+		total = len(mypath)
+		count = 0
+		slashindex = 0
+		index = -1
+		for char in mypath:
+			index = index + 1
+			if char == '\\':
+				count = count + 1
+				if count == slashcount:
+					slashindex = index
+		mypath = mypath[:-(total-slashindex)]
+		print mypath
 
 # Function to delete local file
 def delLocalButton():
