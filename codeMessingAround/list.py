@@ -26,7 +26,6 @@ def populateListBox(contents):
 
 
 def cursorSelect(evt):
-    global value
     global contents
     value = str((mylist.get(mylist.curselection())))
     print value
@@ -35,8 +34,6 @@ def cursorSelect(evt):
 
     if value == '...':
         goUpDir()
-    elif value[0] == '>':
-        changeWorkingDir(value[4:])
 
 
 def goUpDir():
@@ -48,18 +45,24 @@ def goUpDir():
     contents = os.listdir(mypath)
     populateListBox(contents)
 
-def changeWorkingDir(dirName):
+def changeWorkingDir():
     global mypath
-    dirPath = os.path.join(mypath, dirName)
-    if os.path.isdir(dirPath):
-        mypath = dirPath
-        contents = os.listdir(mypath)
-        populateListBox(contents)
+
+    value = str((mylist.get(mylist.curselection())))
+    print 'double', value
+
+    if value[0] == '>':
+        dirPath = os.path.join(mypath, value[4:])
+        if os.path.isdir(dirPath):
+            mypath = dirPath
+            contents = os.listdir(mypath)
+            populateListBox(contents)
 
 
 
 mylist = Listbox(root, yscrollcommand = scrollbar.set )
 mylist.bind('<<ListboxSelect>>', cursorSelect)
+mylist.bind('<Double-1>', lambda x: changeWorkingDir())
 populateListBox(contents)
 
 mylist.pack( side = LEFT, fill = BOTH )
