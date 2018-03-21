@@ -39,6 +39,7 @@ window = Tix.Tk()
 window.title("FTP Application")
 window.resizable(0,0)
 
+
 # Finds last backslach and removes everything after
 # to get new directory
 def getCdup():
@@ -58,6 +59,11 @@ def getCdup():
 		mypath = mypath[:-(total-slashindex)]
 		print mypath
 
+# Function to print to displayed terminal
+def printToTerminal(sentence):
+	terminalText.insert('1.0', sentence + '\n')
+	terminalText.pack()
+
 # Function to delete local file
 def delLocalButton():
 	global selectedLocal
@@ -66,7 +72,7 @@ def delLocalButton():
 	elif os.path.isfile(selectedLocal) == False:
 		tkMessageBox.showinfo("Deletion Error", "Directories cannot be deleted. \n Please select a file.")
 	else:
-		print selectedLocal + ' file will be deleted'
+		printToTerminal(selectedLocal + ' file will be deleted')
 		#																				<---------------------- Delete file from local
 
 # Function to upload local file
@@ -309,29 +315,45 @@ def connectButton():
 # TKINTER WIDGET SETUP
 
 # Username Entry
-userEntry = Entry(window)
+entryFrame = Frame(window)
+userEntry = Entry(entryFrame)
+userLabel=Label(entryFrame,text="Username: ")
+entryFrame.grid(row=0,column=0,padx=10,pady=10)
 userEntry.insert(0,"Username")
-userEntry.grid(row=0,column=0,padx=10,pady=10)
 userEntry.bind('<Button-1>', userClear)
+userLabel.pack(side="left")
+userEntry.pack(side="left")
+
 
 # Password Entry
-passEntry = Entry(window)
+passFrame = Frame(window)
+passEntry = Entry(passFrame)
 passEntry.insert(0,"Password")
-passEntry.grid(row=0,column=1,padx=5,pady=10)
+passLabel = Label(passFrame,text="Password: ")
+passFrame.grid(row=0,column=1,padx=5,pady=10)
 passEntry.bind('<Button-1>', passClear)
+passLabel.pack(side="left")
+passEntry.pack(side="left")
 
 # Address Entry
-addressEntry = Entry(window)
+addressFrame = Frame(window)
+addressEntry = Entry(addressFrame)
 addressEntry.insert(0,"ServerAddress")
-addressEntry.grid(row=0,column=2,padx=10,pady=10)
+addressLabel = Label(addressFrame, text="Address: ")
+addressFrame.grid(row=0,column=2,padx=10,pady=10)
 addressEntry.bind('<Button-1>', addrClear)
+addressLabel.pack(side="left")
+addressEntry.pack(side="left")
   
 # Port Entry
-portEntry = Entry(window)
+portFrame = Frame(window)
+portEntry = Entry(portFrame)
 portEntry.insert(0,"Port")
-portEntry.grid(row = 0, column=3,padx=5,pady=10)
+portFrame.grid(row = 0, column=3,padx=5,pady=10)
 portEntry.bind('<Button-1>', portClear)
-
+portLabel = Label(portFrame, text="Port: ")
+portLabel.pack(side="left")
+portEntry.pack(side="left")
 
 # Connect Button
 connectBtn = Button(window, text="CONNECT", command=connectButton)
@@ -367,6 +389,7 @@ localUpl.pack(side="right")
 
 # Frame with server files
 serverFrame = Canvas(width=fileSysX*1.4, height=fileSysY,relief = SUNKEN,borderwidth=2)
+#serverFrame = Label(window,height=100)
 serverFrame.grid(row=3,column=2,columnspan=3,padx=framePadX,pady=framePadY)
 
 # Frame with terminal responses
@@ -384,8 +407,18 @@ terminalEntry.bind('<Return>',run)
 
 
 # Frame with local files
-localFrame = Canvas(width=fileSysX*1.5, height=fileSysY,relief = SUNKEN,borderwidth=2,bg='white')
-localFrame.grid(row=3,column=0,columnspan=2,padx=framePadX,pady=framePadY)
+localCanv = Canvas(window,width=fileSysX*1.5,height=fileSysY, relief = SUNKEN,borderwidth=2,bg='white')
+localCanv.grid(row=3,column=0,columnspan=2,padx=5,pady=5)
+
+localFrame = Canvas(window,width=fileSysX*1.4,height=fileSysY-50, relief = FLAT,borderwidth=0,bg='white',highlightcolor='white')
+localFrame.grid(pady=0)
+localFrame.pack()
+localCanv.create_window(10, 30, anchor=NW, window=localFrame)
+
+scrollbar = Scrollbar(serverFrame, orient=VERTICAL)
+scrollbar.pack( side = LEFT, fill = Y )
+scrollbar.config( command = localFrame.yview )
+localFrame.configure(scrollregion=(0,0,1000,1000))
 
 
 showDirContents()
