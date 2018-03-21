@@ -10,9 +10,6 @@ else:
     servIP = socket.gethostbyname(sys.argv[1])
     
 print servIP
-#servIP = '192.168.1.41'
-#servIP = socket.gethostbyname(socket.gethostname())
-
 
 logic = clientLogic(servIP)
 
