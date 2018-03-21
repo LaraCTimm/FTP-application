@@ -88,30 +88,102 @@ File Transfer Protocol (FTP) is a protocol which is used  to transfer files betw
 Detailed within the sections below are a overview of the implemented system and its command/reply messaging exchange, a working description of the system and code base,the results of system testing and a critical analysis thereof. Also included is the division of work between the project partners.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section{SYSTEM DESCRIPTION} % talk about implemented functions and features from a client perspective
-% talk about what features were implemented in general (what couldn't be implemented and why)
+\section{SYSTEM DESCRIPTION} 
 
-An FTP client and server pair has been designed and implemented as per RFC959 specifications~\cite{rfc959}. By implementing the system in such a way, both the server and client are compatible standardised servers and clients. A limitation of the system is that it is not designed for any platform other than the Windows OS.
+An FTP client and server pair has been designed and implemented as per RFC~959 specifications~\cite{rfc959}. By implementing the system in such a way, both the server and client are compatible standardised servers and clients. A limitation of the system is that it is not designed for any platform other than the Windows OS.
 
 \subsection{FTP Server}
 
-Interaction with the server is handled in command line through a list of server instructions capable of doing some stuff.
+%run locally can be connnected to locally or on same NW
+The FTP server is hosted locally, and can be accessed by an FTP client which is either connecting from the hosts computer, or from a computer running on the same Local Area Network (LAN) via the server's public IP address. 
 
-\subsection{FTP Client UI}
+%Authentication to maintain records/repos - remote repo is "./username" client does not have access to server files otherwise
+In order to provide unique user experience, the server maintains a user repository, within the servers local file system, for each registered client. To gain access to their remote repository, the user must be successfully authenticated using their unique username and password combination. Clients trying to connect without a registered username and password are not permitted to access the server file system.
 
-The FTP client is handled by a simple UI. %%%%TALK ABOUT THIS
+%uses RFC959 - can be connected to by a range of clients (standard also)
+%has basic implementation plus more functionality
+%server response sent in accordance w protocol
+The server is implemented in accordance with the RFC~959 specification. The implemented features of the system go beyond those of the minimum requirements set out by the standard, improving the system's general functionality and usability. Following RFC~959 allows for the server to be accessed by not only the designed client but also standardised FTP clients. 
+
+%multithreaded
+To allow for more than one client to be connected to the server at a time, the server program is multithreaded. Each new client connection is handled by a separate thread, and up to five simultaneous connections can be established by FTP clients. 
+
+%errors are communicated in messages to client
+To communicate file, system and transfer status to the client, the server makes use of a number of RFC~959 specified reply codes. These codes enable the client to detect errors and react accordingly. Further discussion of this process can be found in Section~\ref{command/reply}
 
 
-\subsection{FTP Client Logic}
+\subsubsection*{Unimplemented features: }
+In accordance with the RFC~959 minimum requirements, the default structure and file transmission mode for exchange should be implemented. Functionality for Record and Page structures, as well as for Block and Comprressed transmission modes were not implemented. The project group deemed theses features unnecessary as standard FTP clients would be able to transmit in File structure and Stream transmission modes which are default.
 
-Interaction with the FTP server is handled by the \texttt{clientLogic} class. This class has functionality matching that of the FTP server as to be able to send the server the commands which it wishes to pursue. 
+%recore and page structure
+%block and compressed transmission modes
 
+\subsection{FTP Client}
+
+The FTP client is composed of two working parts, a Graphical User Interface (GUI) and a logical FTP client. The user interacts with the GUI which instructs the FTP client to interact with the FTP server. In this way the interface is separated from the logic layer, following the separation of concerns principle.
+
+\subsubsection{Client Logic}
+~\\
+
+%runs from local pc
+The FTP client is hosted locally and can connect to a server hosted either locally (on the client's computer) or over a LAN connection. To connect to the server, the client must know the public IP address and port on which the server is listening for a connection. These details are obtained from the GUI described in Section~\ref{GUI}.
+
+%RFC - interacts w standard server
+The responsibility of the FTP client is to interact with the server in a manner in which the server understands. The client translates the raw data received from the GUI by formatting it to comply with the RFC~959 specification. In this way, the client can not only interact with the designed server, but also  with a range of standard FTP servers.
+
+%local error handling - not responsibility of server to deal w unusual requests
+It is the responsibility of the client to handle errors that are not relevant to the server. Such errors include: trying to upload a file that doesn't exist in the clients working directory and handling errors to do with incorrect formatting of client commands. Although these checks do exist, the client interface will most oftem prevent these user errors from occurring.
+
+
+\subsubsection{Client Interface}\label{GUI}
+~\\
+%The FTP client is handled by a simple GUI. 
+
+%input params (name pass addr IP)
+
+%can view and nav both file systems
+
+% can upload from local or dl from remote - file saved to current working dir
+
+%can delete files/folders (folder removes all contents) %%MAKE POPUP TO ASK IF SURE%??
+%can make folders local and remote?
+
+%client can input custom commands if necessary.
+
+%client disconnects by?
+
+
+\subsubsection*{Unimplemented features: }
+In accordance with the server implementation, the client is only capable of handling the File structure and Stream mode of data transmission as specified in the minimum RFC~959 requirements.
+
+%in accordance with server stru and mode
+%cannot make new files on either side, copy paste etc. 
+%cannot remane files/folders on either side
+%cannot edit files on either side
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section{FTP COMMAND/REPLY OVERVIEW} % talk about implemented functions and features from a server perspective - command yields reply
+\section{FTP COMMAND/REPLY OVERVIEW}\label{command/reply} % talk about implemented functions and features from a server perspective - command yields reply
 
+1yz   Positive Preliminary reply
 
+requested action initiated, expect another reply before proceeding with a new command. can indicate that was accepted and must now pay attention to data connections
+
+2yz   Positive Completion reply
+
+requested action completed, new command can be sent
+
+3yz   Positive Intermediate reply
+
+command is accepted but its pending reciept of further information. user should send another command specifying the info. (used in command sequence groups)
+
+4yz   Transient Negative Completion reply
+
+command not accepted, action did not take place. Error is temp and action may be requested again. User process is encouraged to try again. replies are 4yz if the commands can be repeated without any change in command form or in properties of the User or Server(command spelled same with some arguements used)
+
+5yz   Permanent Negative Completion reply
+
+command not accepted, action did not take place. user discouraged from repeating same request in the same sentence. (change spelling or alter directory status)
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{DETAILED FEATURE IMPLEMENTATION} % talk about details of how the complex functions work
