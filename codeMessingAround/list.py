@@ -2,8 +2,11 @@ from Tkinter import *
 import os
 
 root = Tk()
-scrollbar = Scrollbar(root)
-scrollbar.pack( side = RIGHT, fill = Y )
+yscrollbar = Scrollbar(root, orient = VERTICAL)
+yscrollbar.pack( side = RIGHT, fill = Y )
+
+xscrollbar = Scrollbar(root, orient = HORIZONTAL)
+xscrollbar.pack( side = BOTTOM, fill = X )
 
 
 mypath = str(os.getcwd())
@@ -60,13 +63,14 @@ def changeWorkingDir():
 
 
 
-mylist = Listbox(root, yscrollcommand = scrollbar.set )
+mylist = Listbox(root, yscrollcommand = yscrollbar.set, xscrollcommand = xscrollbar.set )
 mylist.bind('<<ListboxSelect>>', cursorSelect)
 mylist.bind('<Double-1>', lambda x: changeWorkingDir())
 populateListBox(contents)
 
 mylist.pack( side = LEFT, fill = BOTH )
-scrollbar.config( command = mylist.yview )
+yscrollbar.config( command = mylist.yview )
+xscrollbar.config( command = mylist.xview )
 
 
 mainloop()
