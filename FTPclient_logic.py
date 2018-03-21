@@ -75,6 +75,8 @@ class clientLogic():
 
         # create and listen on port for data connection from server
         self.activeSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        print ipAddr
+        print port
         self.activeSocket.bind((ipAddr, port))
         self.activeSocket.listen(1)
         self.clientSock.send('PORT '+ connectionString +'\r\n')
