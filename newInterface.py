@@ -132,21 +132,31 @@ def doubleClick(object):
 	global mypath
 	# if starts with . remove from mypath list
 	global selectedLocal 
+
+	# Change selected button colour
+	newlist[object].config(bg='blue')
+	for index,button in enumerate(newlist):
+		if index == object:
+			button.config(bg='blue')
+		else:
+			button.config(bg='white')
+			print index
+
 	oldSelect = selectedLocal
-	selectedLocal = mypath + '\\' + object
-	if object == '...':
+	selectedLocal = mypath + '\\' + contents[object]
+	if contents[object] == '...':
 		getCdup()
 		terminalText.insert('1.0', 'Changed directory to ' + mypath + '\n')
 		terminalText.pack()
 		showDirContents()
-	elif os.path.isfile(object) == False:
+	elif os.path.isfile(contents[object]) == False:
 		if oldSelect == selectedLocal:
-			mypath = mypath + '\\' + object
+			mypath = mypath + '\\' + contents[object]
 			terminalText.insert('1.0', 'Changed directory to ' + mypath + '\n')
 			terminalText.pack()
 			showDirContents()
 	else:
-		fileToSend = mypath + '\\' + object
+		fileToSend = mypath + '\\' + contents[object]
 		terminalText.insert('1.0','Send file: ' + fileToSend + '\n')
 		terminalText.pack()
 		#																		<------------------------- Upload file 'fileToSend'
@@ -240,17 +250,19 @@ def showDirContents():
 
 	localAdd = Label(window, text=mypath,bg='black',fg='white',width=65,anchor=E).grid(column=0,row=2,columnspan=2)
 	localFrame.delete("all")
+	global newlist
 	newlist = []
 	newerlist = []
-	contents = os.listdir(mypath)
+	global contents 
+	contents= os.listdir(mypath)
 	goUp = "..."
 	contents.insert(0,goUp)
 	for index,x in enumerate(contents):
 		if "." not in x or x == "...":
-			newlist.append(Button(window, text='-->' + x, relief='flat',compound="left",command=lambda x = x: doubleClick(x)))
+			newlist.append(Button(window, text='-->' + x, bg='white',relief='flat',compound="left",command=lambda x = index: doubleClick(x)))
 			newerlist.append(localFrame.create_window(10, 10+index*20, anchor=NW, window=newlist[index]))
 		else:
-			newlist.append(Button(window, text='    ' + x, relief='flat',command=lambda x = x: doubleClick(x)))
+			newlist.append(Button(window, text='    ' + x, bg='white',relief='flat',command=lambda x = index: doubleClick(x)))
 			newerlist.append(localFrame.create_window(10, 10+index*20, anchor=NW, window=newlist[index]))
 
 # START SERVER
@@ -283,44 +295,6 @@ def connectButton():
 
 		
 		# 										<----------------------------------------------- Run log in  with USR and PASS, etc
-
-
-
-
-
-#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-class App(tk.Frame):
-    def __init__(self, master, path):
-        tk.Frame.__init__(self, master)
-        self.tree = ttk.Treeview(self)
-        ysb = ttk.Scrollbar(self, orient='vertical', command=self.tree.yview)
-        xsb = ttk.Scrollbar(self, orient='horizontal', command=self.tree.xview)
-        self.tree.configure(yscroll=ysb.set, xscroll=xsb.set)
-        self.tree.heading('#0', text=path, anchor='w')
-
-        abspath = os.path.abspath(path)
-        abspath = 'C:\\Users\\Sasha\\Desktop'
-        root_node = self.tree.insert('', 'end', text=abspath, open=True)
-        self.process_directory(root_node, abspath)
-
-        self.tree.grid(row=0, column=0)
-        ysb.grid(row=0, column=1, sticky='ns')
-        xsb.grid(row=1, column=0, sticky='ew')
-        self.grid()
-
-    def process_directory(self, parent, path):
-        for p in os.listdir(path):
-            abspath = os.path.join(path, p)
-            isdir = os.path.isdir(abspath)
-            oid = self.tree.insert(parent, 'end', text=p, open=False)
-            if isdir:
-                self.process_directory(oid, abspath)
-
-#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-
-
 
 
 
@@ -404,12 +378,9 @@ terminalEntry.bind('<Return>',run)
 
 
 # Frame with local files
-localFrame = Canvas(width=fileSysX*1.5, height=fileSysY,relief = SUNKEN,borderwidth=2)
+localFrame = Canvas(width=fileSysX*1.5, height=fileSysY,relief = SUNKEN,borderwidth=2,bg='white')
 localFrame.grid(row=3,column=0,columnspan=2,padx=framePadX,pady=framePadY)
 
-
-# path_to_my_project = os.path.abspath('.')
-# app = App(localFrame, path=path_to_my_project)
 
 showDirContents()
 
