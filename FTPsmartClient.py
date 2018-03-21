@@ -46,8 +46,27 @@ if reply[:3] == '220':       # wait for service ready response
             elif functionName == 'PORT':
                 sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
                 sock.bind(('', 0))
-                logic.PORT(socket.gethostbyname(socket.gethostname()), sock.getsockname()[1])
 
+                IPAddr = socket.gethostbyname(socket.gethostname())
+                port = sock.getsockname()[1]
+
+                sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+                sock.close()
+                
+                logic.PORT(IPAddr, port)
+
+                # # ubuntu hack
+                # IPAdd = [l for l in ([ip for ip in socket.gethostbyname_ex(socket.gethostname())[2] \
+                #            if not ip.startswith("127.")][:1], [[(s.connect(('8.8.8.8', 53)), s.getsockname()[0], \
+                #            s.close()) for s in [socket.socket(socket.AF_INET, socket.SOCK_DGRAM)]][0][1]]) if l][0][0]
+                # sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                # sock.bind((IPAdd, 0))
+                # port = sock.getsockname()[1]
+                # sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+                # sock.close()
+                # logic.PORT(IPAdd, port)
+                
+                
             elif functionName == 'PASV':
                 logic.PASV()
 
