@@ -1,6 +1,4 @@
 Wireshark logs - wits server and filezilla/
-clientDirectory/
-serverDirectory/
 *.aux
 *.bbl
 *.blg
@@ -12,3 +10,4 @@ serverDirectory/
 Report/Report.rar
 demopanels.pyc
 dirTree2.zip
+
