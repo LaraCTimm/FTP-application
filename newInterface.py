@@ -134,13 +134,11 @@ def doubleClick(object):
 	global selectedLocal 
 
 	# Change selected button colour
-	newlist[object].config(bg='blue')
 	for index,button in enumerate(newlist):
 		if index == object:
-			button.config(bg='blue')
+			button.config(bg='PaleTurquoise1')
 		else:
 			button.config(bg='white')
-			print index
 
 	oldSelect = selectedLocal
 	selectedLocal = mypath + '\\' + contents[object]
@@ -149,7 +147,7 @@ def doubleClick(object):
 		terminalText.insert('1.0', 'Changed directory to ' + mypath + '\n')
 		terminalText.pack()
 		showDirContents()
-	elif os.path.isfile(contents[object]) == False:
+	elif "." not in contents[object]:
 		if oldSelect == selectedLocal:
 			mypath = mypath + '\\' + contents[object]
 			terminalText.insert('1.0', 'Changed directory to ' + mypath + '\n')
@@ -240,6 +238,13 @@ def run(event):
 			raise Exception('Command not found')
 	except Exception, err:
 		print 'Error: ', err
+
+# Called on window close or disconnect
+def disconnect():
+	terminalText.insert('1.0','Disconnecting' + '\n')
+	terminalText.pack()
+	window.destroy()
+	#																		<------------------------- Disconnect from server
 
 
 # List contents in directory
@@ -333,7 +338,7 @@ connectBtn.grid(row=0,column=4,padx=50)
 
 # Server Title
 serverTitle = Label(window, text="Files Hosted Remotely").grid(column=2,row=1)
-serverAdd = Label(window, text="",bg='black',fg='white',width=85).grid(column=2,row=2,columnspan=3)
+serverAdd = Label(window, text="",bg='black',fg='white',width=65).grid(column=2,row=2,columnspan=3)
 serverBtnFrame = Frame(window)
 servDel = Button(serverBtnFrame,text="DEL",command=delServButton)
 servDnl = Button(serverBtnFrame,text="DWNL",command=dnlServButton)
@@ -360,7 +365,7 @@ localUpl.pack(side="right")
 #localBtnFrame.create_window(10, 10+index*20, anchor=NW, window=localDel)
 
 # Frame with server files
-serverFrame = Canvas(width=fileSysX*2, height=fileSysY,relief = SUNKEN,borderwidth=2)
+serverFrame = Canvas(width=fileSysX*1.4, height=fileSysY,relief = SUNKEN,borderwidth=2)
 serverFrame.grid(row=3,column=2,columnspan=3,padx=framePadX,pady=framePadY)
 
 # Frame with terminal responses
@@ -384,4 +389,5 @@ localFrame.grid(row=3,column=0,columnspan=2,padx=framePadX,pady=framePadY)
 
 showDirContents()
 
+window.protocol("WM_DELETE_WINDOW", disconnect)
 window.mainloop()
