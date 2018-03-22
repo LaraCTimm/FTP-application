@@ -143,7 +143,7 @@ class clientThread(threading.Thread):
                         return
                     else:
                         password = ''
-                        self.connSock.send('530 Not logged in.\r\n')
+                        self.connSock.send('530 Not logged in. Password invalid.\r\n')
                         return
                 else:
                     self.connSock.send('332 Need account for login.\r\n')
@@ -329,7 +329,7 @@ class clientThread(threading.Thread):
                 requestedFile.close()       # close the file read from
                 self.close_dataSocket()     # close the data socket
 
-                self.connSock.send('226 Closing data connection. Requested file action successful.\r\n')
+                self.connSock.send('226 Closing data connection. File action successful.\r\n')
             else:
                 self.connSock.send('550 Requested action not taken. File unavailable.\r\n')
         else:
@@ -358,7 +358,7 @@ class clientThread(threading.Thread):
             else:
                 requestedFile = open(filePath, 'w')
             
-            self.connSock.send('150 File status okay; about to open data connection.\r\n')
+            self.connSock.send('150 File status okay. Opening data connection.\r\n')
 
             try:
                 self.open_dataSocket()
@@ -373,7 +373,7 @@ class clientThread(threading.Thread):
                 requestedFile.close()           # close the file read from
                 self.close_dataSocket()         # close the data socket
 
-                self.connSock.send('226 Closing data connection. Requested file action successful.\r\n')
+                self.connSock.send('226 Closing data connection. File action successful.\r\n')
             
             except Exception, err:
                 self.connSock.send('550 Requested action not taken. File transfer unsuccessful.\r\n')
@@ -502,8 +502,7 @@ class clientThread(threading.Thread):
             self.connSock.send('257 \"%s\\%s\" created.\r\n'\
                     % (self.workingDirectory[len(serverDirectory):], command[4:-2]))
         else:
-            self.connSock.send('550 Requested action not taken. \"%s\\%s\" already exists.\r\n'\
-                    % (self.workingDirectory[len(serverDirectory):], command[4:-2]) )
+            self.connSock.send('550 Requested action not taken. Directory already exists.\r\n')
             
     def RMD(self, command):
         if self.checkLoggedIn() == False:
