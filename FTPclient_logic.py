@@ -2,6 +2,8 @@ import socket
 import sys
 import os
 
+isLoggedIn=False
+
 class clientLogic():
     def __init__(self, servIP):
         self.locIP = socket.gethostbyname(socket.gethostname())
@@ -22,7 +24,8 @@ class clientLogic():
 
     # NEED TO SET THIS UP TO DEAL WITH REPLIES THAT EXPECT OTHER REPLIES ##########################
     def getReply(self):
-        reply = self.clientSock.recv(1024)
+        self.reply = self.clientSock.recv(1024)
+        reply = self.reply
         print 'Response:', reply
         print ("")
         

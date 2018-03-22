@@ -33,6 +33,8 @@ customCommand = ""
 selectedLocal = ""
 selectedRemote = ""
 remoteList=[]
+isConnected = False
+isLoggedIn = False
 
 # Set up window variables
 window = Tix.Tk()
@@ -138,15 +140,18 @@ def newDirClear(event):
 
 # Function called to extract files in server directory
 def getDirFiles():
-	#global logic.directoryArray
 	logic.PASV()
 	logic.LIST()
 	global remoteList
+	global remotePath
 	remoteList=['...']
 	for fileDet in logic.directoryArray:
 		index = fileDet.index(':')
 		printToTerminal(fileDet[(index+4):])
-		remoteList.append(fileDet[(index+4):])
+		if fileDet[0] == 'd':
+			remoteList.append('>   '+fileDet[(index+4):])
+		else:
+			remoteList.append('    '+fileDet[(index+4):])
 
 	populateListBoxServ(remoteList)
 
@@ -267,9 +272,10 @@ def run(event):
 
 # Called on window close or disconnect
 def disconnect():
-	terminalText.insert('1.0','Disconnecting' + '\n')
-	terminalText.pack()
-	logic.QUIT()
+	if isConnected == True:
+		terminalText.insert('1.0','Disconnecting' + '\n')
+		terminalText.pack()
+		logic.QUIT()
 	window.destroy()
 	#																		<------------------------- Disconnect from server
 
@@ -297,10 +303,6 @@ def showDirContents():
 			newlist.append(Button(window, text='    ' + x, bg='white',relief='flat',command=lambda x = index: doubleClick(x)))
 			newerlist.append(localFrame.create_window(10, 10+index*20, anchor=NW, window=newlist[index]))
 
-# START SERVER
-# *TO DO* Check if server is running OR exit server with exit of app
-#os.system("start cmd /k python FTPserver.py")
-
 # START CLIENT
 def connectButton():
 	if userEntry.get() == 'Username' or passEntry.get() == 'Password' or addressEntry.get() == 'ServerAddress':
@@ -311,15 +313,15 @@ def connectButton():
 		reply = logic.clientSock.recv(256)
 		terminalText.insert('1.0', reply)
 		terminalText.pack()
+		isConnected = True
 
 		logic.USER(userEntry.get())
 		logic.PASS(passEntry.get())
-		logic.PASV()
-		logic.LIST()
-		getDirFiles()
-		# logic.directoryArray
-		# function to extract data
-		# function to list everything
+		print 'Response:', logic.reply
+		if logic.reply[:3] == '230':  
+			getDirFiles()
+
+
 		terminalText.insert('1.0', "Entered username:" + userEntry.get()+"\n")
 		terminalText.pack()
 		terminalText.insert('1.0', "Entered password:" + passEntry.get()+"\n")
@@ -344,7 +346,7 @@ entryFrame = Frame(window)
 userEntry = Entry(entryFrame)
 userLabel=Label(entryFrame,text="Username: ")
 entryFrame.grid(row=0,column=0,padx=10,pady=10)
-userEntry.insert(0,"Username")
+userEntry.insert(0,"SBerkowitz")
 userEntry.bind('<Button-1>', userClear)
 userLabel.pack(side="left")
 userEntry.pack(side="left")
@@ -353,7 +355,7 @@ userEntry.pack(side="left")
 # Password Entry
 passFrame = Frame(window)
 passEntry = Entry(passFrame)
-passEntry.insert(0,"Password")
+passEntry.insert(0,"sb")
 passLabel = Label(passFrame,text="Password: ")
 passFrame.grid(row=0,column=1,padx=5,pady=10)
 passEntry.bind('<Button-1>', passClear)
@@ -363,7 +365,7 @@ passEntry.pack(side="left")
 # Address Entry
 addressFrame = Frame(window)
 addressEntry = Entry(addressFrame)
-addressEntry.insert(0,"ServerAddress")
+addressEntry.insert(0,"172.21.109.177")
 addressLabel = Label(addressFrame, text="Address: ")
 addressFrame.grid(row=0,column=2,padx=10,pady=10)
 addressEntry.bind('<Button-1>', addrClear)
@@ -373,7 +375,7 @@ addressEntry.pack(side="left")
 # Port Entry
 portFrame = Frame(window)
 portEntry = Entry(portFrame)
-portEntry.insert(0,"Port")
+portEntry.insert(0,"21")
 portFrame.grid(row = 0, column=3,padx=5,pady=10)
 portEntry.bind('<Button-1>', portClear)
 portLabel = Label(portFrame, text="Port: ")
@@ -486,8 +488,24 @@ def cursorSelect(evt):
     else:
     	selectedLocal = mypath + '\\' + value[5:]
 
-def cursorSelectServ():
-	print 'hey'
+def cursorSelectServ(evt):
+	global selectedRemote
+	global remotePath
+	value=str((servlist.get(servlist.curselection())))
+
+	servlist.activate(0)
+
+	logic.PWD()
+	remotePath = logic.reply
+	reply = remotePath.split('"')
+	remotePath = reply[1]
+	printToTerminal(remotePath)
+
+	if value == '...':
+		goUpDirServ()
+	else:
+		selectedRemote = remotePath + '\\' + value
+		print selectedRemote
 
 def goUpDir():
     global mypath
@@ -500,7 +518,13 @@ def goUpDir():
     localAdd = Label(window, text=mypath,bg='black',fg='white',width=50).grid(column=0,row=2,columnspan=2)
 
 def goUpDirServ():
-	print 'hey'
+	global remotePath
+	var = remotePath.split('\\')
+	remotePath = '\\'.join(var[:-1])
+	logic.CDUP()
+	getDirFiles()
+	# populateListBoxServ(contents)
+	serverAdd = Label(window, text=remotePath,bg='black',fg='white',width=50).grid(column=2,row=2,columnspan=3)
 
 def changeWorkingDir():
     global mypath
@@ -516,8 +540,32 @@ def changeWorkingDir():
             populateListBox(contents)
     localAdd = Label(window, text=mypath,bg='black',fg='white',width=50).grid(column=0,row=2,columnspan=2)
 
+def getRemPath():
+	global remotePath
+	logic.PWD()
+	remotePath = logic.reply
+	reply = remotePath.split('"')
+	remotePath = reply[1]
+	serverAdd = Label(window, text=remotePath,bg='black',fg='white',width=65).grid(column=2,row=2,columnspan=3)
+	
+
 def changeWorkingDirServ():
-	print 'hey'
+	global remotePath
+
+	value = str((servlist.get(servlist.curselection())))
+	if value[0] == '>':
+		print remotePath+'\\' +value[4:-1]
+		print 'change dir'
+		logic.CWD(value[4:-1])
+
+		printToTerminal(logic.reply)
+		if logic.reply[0] == '2':
+			getRemPath()
+			print 'Directory changed'
+			getDirFiles()
+
+		logic.PWD()
+		print 'changedir'
 
 # Frame with server files 
 serverFrame = Frame(width=fileSysX*1.5, height=fileSysY,relief = SUNKEN, bg = 'blue')
