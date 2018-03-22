@@ -93,11 +93,11 @@ def uplLocalButton():
 			tkMessageBox.showinfo("Upload Error", "Directories cannot be Uploaded. \n Please select a file.")
 		else:
 			logic.PASV()
+			logic.TYPE(selectedLocal)
 			printToTerminal(logic.reply)
 			logic.STOR(mypath + '\\' + selectedLocal)
 			printToTerminal(logic.reply)
 			getDirFiles()
-			print selectedLocal + ' file will be uploaded'
 	else:
 		tkMessageBox.showinfo("Upload Error", "Please connect to server before uploading file.")
 
@@ -107,17 +107,21 @@ def delServButton():
 	if(len(selectedRemote) < 1):
 		tkMessageBox.showinfo("Deletion Error", "No file selected!")
 	elif selectedRemote[0] == '>':
-		logic.RMD(selectedRemote[4:-1])
-		printToTerminal(logic.reply)
-		getDirFiles()
-		print selectedRemote + ' directory will be deleted'
+		dirDelete()
 		#																				<---------------------- Delete directory from server
 	else:
 		logic.DELE(selectedRemote[5:-1])
 		printToTerminal(logic.reply)
 		getDirFiles()
-		print selectedRemote + ' file will be deleted'
 		#																				<---------------------- Delete file from server
+
+def delDir():
+	global top
+	top.destroy()
+	global selectedRemote
+	logic.RMD(selectedRemote[4:-1])
+	printToTerminal(logic.reply)
+	getDirFiles()
 
 # Function to download remote file
 def dnlServButton():
@@ -130,6 +134,7 @@ def dnlServButton():
 	else:
 		print selectedRemote[5:-1] + ' file will be downloaded'
 		logic.PASV()
+		logic.TYPE(selectedRemote[5:-1])
 		logic.RETR(selectedRemote[5:-1])
 		contents = os.listdir(mypath)
 		populateListBox(contents)
@@ -169,7 +174,7 @@ def getDirFiles():
 	logic.LIST()
 	global remoteList
 	global remotePath
-	remoteList=['...']
+	remoteList=['..']
 	for fileDet in logic.directoryArray:
 		index = fileDet.index(':')
 		if fileDet[0] == 'd':
@@ -197,7 +202,7 @@ def doubleClick(object):
 
 	oldSelect = selectedLocal
 	selectedLocal = contents[object]
-	if contents[object] == '...':
+	if contents[object] == '..':
 		getCdup()
 		printToTerminal(logic.reply)
 		terminalText.insert('1.0', 'Changed directory to ' + mypath + '\n')
@@ -284,10 +289,6 @@ def run(event):
 		elif functionName == 'NOOP':
 			logic.NOOP()
 
-		# elif functionName == 'AUTH':
-		#     logic.clientSock.send('AUTH TLS')
-		#     #logic.getReply()
-
 		else:
 			raise Exception('Command not found')
 	except Exception, err:
@@ -323,10 +324,10 @@ def showDirContents():
 	newerlist = []
 	global contents 
 	contents= os.listdir(mypath)
-	goUp = "..."
+	goUp = ".."
 	contents.insert(0,goUp)
 	for index,x in enumerate(contents):
-		if "." not in x or x == "...":
+		if "." not in x or x == "..":
 			newlist.append(Button(window, text='-->' + x, bg='white',relief='flat',compound="left",command=lambda x = index: doubleClick(x)))
 			newerlist.append(localFrame.create_window(10, 10+index*20, anchor=NW, window=newlist[index]))
 		else:
@@ -359,16 +360,7 @@ def connectButton():
 			remotePath = reply[1]
 			serverAdd = Label(window, text=remotePath,bg='black',fg='white',width=60).grid(column=2,row=2,columnspan=3)
 
-
-
-		
-
-
-
-
-
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~ TKINTER WIDGET SETUP ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
 # Username Entry
 entryFrame = Frame(window)
 userEntry = Entry(entryFrame)
@@ -412,7 +404,6 @@ connectBtn = Button(connectBtns, text="CONNECT", command=connectButton)
 disconnectBtn = Button(connectBtns, text="DISCONNECT",command=disconnectBtn)
 connectBtn.pack(side="left")
 disconnectBtn.pack(side="left")
-
 # Server Title
 serverTitle = Label(window, text="Files Hosted Remotely").grid(column=2,row=1,padx=10)
 serverAdd = Label(window, text="",bg='black',fg='white',width=60).grid(column=2,row=2,columnspan=3,pady=3,padx=5 )
@@ -424,8 +415,6 @@ serverBtnFrame.grid(row=1,column=4,sticky="nsew", padx=10)
 servDel.pack(side="right")
 servDnl.pack(side="right")
 servMkdr.pack(side="right")
-
-
 # Local Title
 localTitle = Label(window, text="Files Hosted Locally").grid(column=0,row=1,sticky=W,padx=5)
 localAdd = Label(window, text=mypath,bg='black',fg='white',width=60).grid(column=0,row=2,columnspan=2,padx=5)
@@ -451,13 +440,32 @@ terminalEntry.grid(row=5,column=0,columnspan=5)
 terminalEntry.bind('<Button-1>', termClear)
 terminalEntry.bind('<Return>',run)
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~ TOPLEVEL POP-UPS ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+def dirDelete():
+	global top
+	top = Toplevel(width=1000,pady=10,padx=10)
+	top.title("Directory Deletion")
+
+	msg = Message(top, text="You are about to permanenly delete a directory and all of its contents. \n Do you wish to proceed?")
+	msg.pack()
+
+	cancelButton = Button(top, text="Cancel", command=top.destroy)
+	cancelButton.pack(side="right")
+	delButton = Button(top, text="Yes, Delete", command=delDir)
+	delButton.pack(side="right")
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
 mypath = str(os.getcwd())
 print mypath
 contents = os.listdir(mypath)
 
+# Functions to populate displayed local and remote file directories
 def populateListBox(contents):
     mylist.delete(0, END)
-    mylist.insert(END, '...')
+    mylist.insert(END, '..')
     for line in contents:
         fileName = os.path.join(mypath, './'+line)
         if os.path.isdir(fileName):
@@ -465,51 +473,39 @@ def populateListBox(contents):
         else:
             newline = '     '+line
         mylist.insert(END, str(newline))
-
 def populateListBoxServ(contents):
 	servlist.delete(0, END)
 	for line in contents:
-        # fileName = os.path.join(mypath, './'+line)
-        # if os.path.isdir(fileName):
-        #     newline = '>   '+line
-        # else:
-        #     newline = '     '+line
 		servlist.insert(END, str(line))
 	
-
+# Functions called to select files or directories on click
 def cursorSelect(evt):
     global contents
     global selectedLocal
     value = str((mylist.get(mylist.curselection())))
     print value
-
-
     mylist.activate(0)
-
-    if value == '...':
-        goUpDir()
-    else:
+    if value != '..':
+        # goUpDir()
+    # else:
     	selectedLocal = value[5:]
-
 def cursorSelectServ(evt):
 	global selectedRemote
 	global remotePath
 	value=str((servlist.get(servlist.curselection())))
-
 	servlist.activate(0)
-
 	logic.PWD()
 	remotePath = logic.reply
 	reply = remotePath.split('"')
 	remotePath = reply[1]
-
-	if value == '...':
+	if value == '..':
 		selectedRemote = value
 		goUpDirServ()
 	else:
 		selectedRemote = value
 		print selectedRemote
 
+# Functions called to go up a file directory in local and remote
 def goUpDir():
     global mypath
     var = mypath.split('\\')
@@ -519,7 +515,6 @@ def goUpDir():
     contents = os.listdir(mypath)
     populateListBox(contents)
     localAdd = Label(window, text=mypath,bg='black',fg='white',width=60).grid(column=0,row=2,columnspan=2)
-
 def goUpDirServ():
 	global remotePath
 	var = remotePath.split('\\')
@@ -529,12 +524,11 @@ def goUpDirServ():
 		getDirFiles()
 		serverAdd = Label(window, text=remotePath,bg='black',fg='white',width=60).grid(column=2,row=2,columnspan=3)
 
+# Function called to change local, working directory
 def changeWorkingDir():
     global mypath
-
     value = str((mylist.get(mylist.curselection())))
     print 'double', value
-
     if value[0] == '>':
         dirPath = os.path.join(mypath, value[4:])
         if os.path.isdir(dirPath):
@@ -543,6 +537,7 @@ def changeWorkingDir():
             populateListBox(contents)
     localAdd = Label(window, text=mypath,bg='black',fg='white',width=60).grid(column=0,row=2,columnspan=2)
 
+# Function called to get remote path
 def getRemPath():
 	global remotePath
 	logic.PWD()
@@ -551,10 +546,9 @@ def getRemPath():
 	remotePath = reply[1]
 	serverAdd = Label(window, text=remotePath,bg='black',fg='white',width=60).grid(column=2,row=2,columnspan=3)
 	
-
+# Function called to change remote working directory
 def changeWorkingDirServ():
 	global remotePath
-
 	value = str((servlist.get(servlist.curselection())))
 	if value[0] == '>':
 		print remotePath+'\\' +value[4:-1]
@@ -566,7 +560,6 @@ def changeWorkingDirServ():
 			getRemPath()
 			print 'Directory changed'
 			getDirFiles()
-
 		logic.PWD()
 		print 'changedir'
 
