@@ -306,7 +306,7 @@ def disconnectBtn():
 		isConnected = False
 		logic.QUIT()
 		printToTerminal(logic.reply)
-		serverAdd = Label(window, text="",bg='black',fg='white',width=50).grid(column=2,row=2,columnspan=3)
+		serverAdd = Label(window, text="",bg='black',fg='white',width=60).grid(column=2,row=2,columnspan=3)
 		populateListBoxServ([])
 
 
@@ -316,7 +316,7 @@ def showDirContents():
 
 	folderImage = PhotoImage(file='folder.gif')
 
-	localAdd = Label(window, text=mypath,bg='black',fg='white',width=50,anchor=E).grid(column=0,row=2,columnspan=2)
+	localAdd = Label(window, text=mypath,bg='black',fg='white',width=60,anchor=E).grid(column=0,row=2,columnspan=2)
 	localFrame.delete("all")
 	global newlist
 	newlist = []
@@ -357,7 +357,7 @@ def connectButton():
 			remotePath = logic.reply
 			reply = remotePath.split('"')
 			remotePath = reply[1]
-			serverAdd = Label(window, text=remotePath,bg='black',fg='white',width=50).grid(column=2,row=2,columnspan=3)
+			serverAdd = Label(window, text=remotePath,bg='black',fg='white',width=60).grid(column=2,row=2,columnspan=3)
 
 
 
@@ -367,7 +367,7 @@ def connectButton():
 
 
 
-# TKINTER WIDGET SETUP
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~ TKINTER WIDGET SETUP ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 # Username Entry
 entryFrame = Frame(window)
@@ -378,8 +378,6 @@ userEntry.insert(0,"SBerkowitz")
 userEntry.bind('<Button-1>', userClear)
 userLabel.pack(side="left")
 userEntry.pack(side="left")
-
-
 # Password Entry
 passFrame = Frame(window)
 passEntry = Entry(passFrame)
@@ -389,17 +387,15 @@ passFrame.grid(row=0,column=1,padx=5,pady=10)
 passEntry.bind('<Button-1>', passClear)
 passLabel.pack(side="left")
 passEntry.pack(side="left")
-
 # Address Entry
 addressFrame = Frame(window)
 addressEntry = Entry(addressFrame)
 addressEntry.insert(0,"172.21.109.177")
 addressLabel = Label(addressFrame, text="Address: ")
-addressFrame.grid(row=0,column=2,padx=10,pady=10)
+addressFrame.grid(row=0,column=2,padx=5,pady=10)
 addressEntry.bind('<Button-1>', addrClear)
 addressLabel.pack(side="left")
 addressEntry.pack(side="left")
-  
 # Port Entry
 portFrame = Frame(window)
 portEntry = Entry(portFrame)
@@ -409,56 +405,52 @@ portEntry.bind('<Button-1>', portClear)
 portLabel = Label(portFrame, text="Port: ")
 portLabel.pack(side="left")
 portEntry.pack(side="left")
-
 # Connect Button
 connectBtns = Frame(window)
-connectBtns.grid(row=0,column=4,padx=50)
+connectBtns.grid(row=0,column=4,padx=5)
 connectBtn = Button(connectBtns, text="CONNECT", command=connectButton)
 disconnectBtn = Button(connectBtns, text="DISCONNECT",command=disconnectBtn)
 connectBtn.pack(side="left")
 disconnectBtn.pack(side="left")
 
 # Server Title
-serverTitle = Label(window, text="Files Hosted Remotely").grid(column=2,row=1)
-serverAdd = Label(window, text="",bg='black',fg='white',width=65).grid(column=2,row=2,columnspan=3)
+serverTitle = Label(window, text="Files Hosted Remotely").grid(column=2,row=1,padx=10)
+serverAdd = Label(window, text="",bg='black',fg='white',width=60).grid(column=2,row=2,columnspan=3,pady=3,padx=5 )
 serverBtnFrame = Frame(window)
 servDel = Button(serverBtnFrame,text="DEL",command=delServButton)
 servDnl = Button(serverBtnFrame,text="DWNL",command=dnlServButton)
-servDir = Entry(serverBtnFrame)
-servDir.insert(0,'New Directory Name')
 servMkdr = Button(serverBtnFrame,text="CREATE",command=mkdrServButton)
 serverBtnFrame.grid(row=1,column=4,sticky="nsew", padx=10)
 servDel.pack(side="right")
 servDnl.pack(side="right")
 servMkdr.pack(side="right")
-servDir.pack(side="right")
-servDir.bind('<Button-1>', newDirClear)
 
 
 # Local Title
-localTitle = Label(window, text="Files Hosted Locally").grid(column=0,row=1)
-localAdd = Label(window, text=mypath,bg='black',fg='white',width=50).grid(column=0,row=2,columnspan=2)
-localBtnFrame = Frame(window)
+localTitle = Label(window, text="Files Hosted Locally").grid(column=0,row=1,sticky=W,padx=5)
+localAdd = Label(window, text=mypath,bg='black',fg='white',width=60).grid(column=0,row=2,columnspan=2,padx=5)
+localBtnFrame = Frame(window,padx=10)
 localDel = Button(localBtnFrame,text="DEL",command=delLocalButton)
 localUpl = Button(localBtnFrame,text="UPL",command=uplLocalButton)
-localBtnFrame.grid(row=1,column=1,sticky="nsew", padx=10)
+localBtnFrame.grid(row=1,column=1,sticky="nsew", padx=0)
 localDel.pack(side="right")
 localUpl.pack(side="right")
-#localBtnFrame.create_window(10, 10+index*20, anchor=NW, window=localDel)
 
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~ TERMINAL ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Frame with terminal responses
 terminalFrame = Frame(colormap="new",relief = SUNKEN,borderwidth=2,bg='black')
 terminalFrame.grid(row=4,column=0,columnspan=5,padx=framePadX,pady=framePadY)
-terminalText = Text(terminalFrame,bg='black',fg='white',height=14,width=135)
+terminalText = Text(terminalFrame,bg='black',fg='white',height=14,width=120)
 terminalText.pack()
 
 # Terminal Entry
-terminalEntry = Entry(window,width=180,bg='black',fg='white')
+terminalEntry = Entry(window,width=160,bg='black',fg='white')
 terminalEntry.insert(0,">Enter custom command>>")
 terminalEntry.grid(row=5,column=0,columnspan=5)
 terminalEntry.bind('<Button-1>', termClear)
 terminalEntry.bind('<Return>',run)
-
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 mypath = str(os.getcwd())
 print mypath
 contents = os.listdir(mypath)
@@ -526,7 +518,7 @@ def goUpDir():
     mypath = cwdPath
     contents = os.listdir(mypath)
     populateListBox(contents)
-    localAdd = Label(window, text=mypath,bg='black',fg='white',width=50).grid(column=0,row=2,columnspan=2)
+    localAdd = Label(window, text=mypath,bg='black',fg='white',width=60).grid(column=0,row=2,columnspan=2)
 
 def goUpDirServ():
 	global remotePath
@@ -535,7 +527,7 @@ def goUpDirServ():
 	logic.CDUP()
 	if logic.reply[0] == '5': 
 		getDirFiles()
-		serverAdd = Label(window, text=remotePath,bg='black',fg='white',width=50).grid(column=2,row=2,columnspan=3)
+		serverAdd = Label(window, text=remotePath,bg='black',fg='white',width=60).grid(column=2,row=2,columnspan=3)
 
 def changeWorkingDir():
     global mypath
@@ -549,7 +541,7 @@ def changeWorkingDir():
             mypath = dirPath
             contents = os.listdir(mypath)
             populateListBox(contents)
-    localAdd = Label(window, text=mypath,bg='black',fg='white',width=50).grid(column=0,row=2,columnspan=2)
+    localAdd = Label(window, text=mypath,bg='black',fg='white',width=60).grid(column=0,row=2,columnspan=2)
 
 def getRemPath():
 	global remotePath
@@ -557,7 +549,7 @@ def getRemPath():
 	remotePath = logic.reply
 	reply = remotePath.split('"')
 	remotePath = reply[1]
-	serverAdd = Label(window, text=remotePath,bg='black',fg='white',width=65).grid(column=2,row=2,columnspan=3)
+	serverAdd = Label(window, text=remotePath,bg='black',fg='white',width=60).grid(column=2,row=2,columnspan=3)
 	
 
 def changeWorkingDirServ():
@@ -607,7 +599,6 @@ xscrollbarserv.pack( side = BOTTOM, fill = X )
 servlist = Listbox(window, width = 70, height=22, yscrollcommand = yscrollbarserv.set, xscrollcommand = xscrollbarserv.set)
 servlist.grid(row=3,column=2,columnspan=3)
 
-#mylist.pack(fill = Y, expand = YES)
 servlist.bind('<<ListboxSelect>>', cursorSelectServ)
 servlist.bind('<Double-1>', lambda x: changeWorkingDirServ())
 
