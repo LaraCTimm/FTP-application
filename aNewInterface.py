@@ -117,6 +117,8 @@ def dnlServButton():
 def mkdrServButton():
 	print 'make dir: ' + servDir.get()
 	directoryName = servDir.get()
+	logic.MKD(directoryName)
+	getDirFiles()
 		#																				<---------------------- make directory
 
 
@@ -137,6 +139,8 @@ def newDirClear(event):
 # Function called to extract files in server directory
 def getDirFiles():
 	#global logic.directoryArray
+	logic.PASV()
+	logic.LIST()
 	global remoteList
 	remoteList=['...']
 	for fileDet in logic.directoryArray:
@@ -460,7 +464,6 @@ def populateListBox(contents):
 
 def populateListBoxServ(contents):
 	servlist.delete(0, END)
-	servlist.insert(END, '...')
 	for line in contents:
         # fileName = os.path.join(mypath, './'+line)
         # if os.path.isdir(fileName):
