@@ -293,15 +293,21 @@ def run(event):
 	except Exception, err:
 		print 'Error: ', err
 
-# Called on window close or disconnect
+# Called on window close
 def disconnect():
 	global isConnected
 	if isConnected == True:
-		terminalText.insert('1.0','Disconnecting' + '\n')
-		terminalText.pack()
 		logic.QUIT()
 	window.destroy()
-	#																		<------------------------- Disconnect from server
+# Called when disconnect button is pushed
+def disconnectBtn():
+	global isConnected
+	if isConnected == True:
+		isConnected = False
+		logic.QUIT()
+		printToTerminal(logic.reply)
+		serverAdd = Label(window, text="",bg='black',fg='white',width=50).grid(column=2,row=2,columnspan=3)
+		populateListBoxServ([])
 
 
 # List contents in directory
@@ -405,8 +411,12 @@ portLabel.pack(side="left")
 portEntry.pack(side="left")
 
 # Connect Button
-connectBtn = Button(window, text="CONNECT", command=connectButton)
-connectBtn.grid(row=0,column=4,padx=50)
+connectBtns = Frame(window)
+connectBtns.grid(row=0,column=4,padx=50)
+connectBtn = Button(connectBtns, text="CONNECT", command=connectButton)
+disconnectBtn = Button(connectBtns, text="DISCONNECT",command=disconnectBtn)
+connectBtn.pack(side="left")
+disconnectBtn.pack(side="left")
 
 # Server Title
 serverTitle = Label(window, text="Files Hosted Remotely").grid(column=2,row=1)
