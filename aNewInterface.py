@@ -76,7 +76,7 @@ def delLocalButton():
 		tkMessageBox.showinfo("Deletion Error", "Directories cannot be deleted. \n Please select a file.")
 	else:
 		if os.path.isfile(selectedLocal) == True:
-			printToTerminal(selectedLocal + ' file will be deleted')
+			printToTerminal(logic.reply)
 			os.remove(selectedLocal)
 			contents = os.listdir(mypath)
 			populateListBox(contents)
@@ -106,10 +106,16 @@ def delServButton():
 	global selectedRemote
 	if(len(selectedRemote) < 1):
 		tkMessageBox.showinfo("Deletion Error", "No file selected!")
-	elif os.path.isfile(selectedRemote) == False:
+	elif selectedRemote[0] == '>':
+		logic.RMD(selectedRemote[4:-1])
+		printToTerminal(logic.reply)
+		getDirFiles()
 		print selectedRemote + ' directory will be deleted'
 		#																				<---------------------- Delete directory from server
 	else:
+		logic.DELE(selectedRemote[5:-1])
+		printToTerminal(logic.reply)
+		getDirFiles()
 		print selectedRemote + ' file will be deleted'
 		#																				<---------------------- Delete file from server
 
@@ -193,6 +199,7 @@ def doubleClick(object):
 	selectedLocal = contents[object]
 	if contents[object] == '...':
 		getCdup()
+		printToTerminal(logic.reply)
 		terminalText.insert('1.0', 'Changed directory to ' + mypath + '\n')
 		terminalText.pack()
 		showDirContents()
@@ -334,21 +341,18 @@ def connectButton():
 		isConnected = True
 
 		logic.USER(userEntry.get())
+		printToTerminal( logic.reply)
 		logic.PASS(passEntry.get())
-		print 'Response:', logic.reply
+		printToTerminal(logic.reply)
 		if logic.reply[:3] == '230':  
 			getDirFiles()
 			isConnected = True
+			logic.PWD()
+			remotePath = logic.reply
+			reply = remotePath.split('"')
+			remotePath = reply[1]
+			serverAdd = Label(window, text=remotePath,bg='black',fg='white',width=50).grid(column=2,row=2,columnspan=3)
 
-
-		terminalText.insert('1.0', "Entered username:" + userEntry.get()+"\n")
-		terminalText.pack()
-		terminalText.insert('1.0', "Entered password:" + passEntry.get()+"\n")
-		terminalText.pack()
-		terminalText.insert('1.0', "Entered address:" + addressEntry.get()+"\n")
-		terminalText.pack()
-		terminalText.insert('1.0', "Entered port:" + portEntry.get()+"\n")
-		terminalText.pack()
 
 
 		
@@ -491,6 +495,7 @@ def populateListBoxServ(contents):
         # else:
         #     newline = '     '+line
 		servlist.insert(END, str(line))
+	
 
 def cursorSelect(evt):
     global contents
@@ -517,9 +522,9 @@ def cursorSelectServ(evt):
 	remotePath = logic.reply
 	reply = remotePath.split('"')
 	remotePath = reply[1]
-	printToTerminal(remotePath)
 
 	if value == '...':
+		selectedRemote = value
 		goUpDirServ()
 	else:
 		selectedRemote = value
@@ -540,8 +545,9 @@ def goUpDirServ():
 	var = remotePath.split('\\')
 	remotePath = '\\'.join(var[:-1])
 	logic.CDUP()
-	getDirFiles()
-	serverAdd = Label(window, text=remotePath,bg='black',fg='white',width=50).grid(column=2,row=2,columnspan=3)
+	if logic.reply[0] == '5': 
+		getDirFiles()
+		serverAdd = Label(window, text=remotePath,bg='black',fg='white',width=50).grid(column=2,row=2,columnspan=3)
 
 def changeWorkingDir():
     global mypath
@@ -612,6 +618,7 @@ xscrollbarserv.pack( side = BOTTOM, fill = X )
 
 servlist = Listbox(window, width = 70, height=22, yscrollcommand = yscrollbarserv.set, xscrollcommand = xscrollbarserv.set)
 servlist.grid(row=3,column=2,columnspan=3)
+
 #mylist.pack(fill = Y, expand = YES)
 servlist.bind('<<ListboxSelect>>', cursorSelectServ)
 servlist.bind('<Double-1>', lambda x: changeWorkingDirServ())
@@ -619,6 +626,7 @@ servlist.bind('<Double-1>', lambda x: changeWorkingDirServ())
 populateListBox(contents)
 
 populateListBoxServ(remoteList)
+
 
 #mylist.grid(row = 3, column = 0, sticky = W+E+N+S)
 
