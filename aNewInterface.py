@@ -446,11 +446,6 @@ localDel.pack(side="right")
 localUpl.pack(side="right")
 #localBtnFrame.create_window(10, 10+index*20, anchor=NW, window=localDel)
 
-# # Frame with server files
-# serverFrame = Canvas(width=fileSysX*1.4, height=fileSysY,relief = SUNKEN,borderwidth=2)
-# #serverFrame = Label(window,height=100)
-# serverFrame.grid(row=3,column=2,columnspan=3,padx=framePadX,pady=framePadY)
-
 # Frame with terminal responses
 terminalFrame = Frame(colormap="new",relief = SUNKEN,borderwidth=2,bg='black')
 terminalFrame.grid(row=4,column=0,columnspan=5,padx=framePadX,pady=framePadY)
@@ -463,23 +458,6 @@ terminalEntry.insert(0,">Enter custom command>>")
 terminalEntry.grid(row=5,column=0,columnspan=5)
 terminalEntry.bind('<Button-1>', termClear)
 terminalEntry.bind('<Return>',run)
-
-
-# # Frame with local files
-#localCanv = Canvas(window,width=fileSysX*1.5,height=fileSysY, relief = SUNKEN,borderwidth=2,bg='blue')
-#localCanv.grid(row=3,column=0,columnspan=2,padx=5,pady=5)
-
-# localFrame = Canvas(window,width=fileSysX*1.4,height=fileSysY-50, relief = FLAT,borderwidth=0,bg='white',highlightcolor='white')
-# localFrame.grid(pady=0)
-# localFrame.pack()
-#localCanv.create_window(10, 30, anchor=NW, window=localFrame,)
-
-# scrollbar = Scrollbar(localCanv, orient = VERTICAL)
-# scrollbar.pack( side = RIGHT, fill = Y )
-# scrollbar.config( command = localFrame.yview )
-# #localFrame.configure(scrollregion=(0,0,1000,1000))
-
-### LARA EDIT ####################################################################################
 
 mypath = str(os.getcwd())
 print mypath
@@ -616,7 +594,7 @@ xscrollbar.pack( side = BOTTOM, fill = X )
 
 mylist = Listbox(window, width = 70, height=22, yscrollcommand = yscrollbar.set, xscrollcommand = xscrollbar.set)
 mylist.grid(row=3,column=0,columnspan=2)
-#mylist.pack(fill = Y, expand = YES)
+
 mylist.bind('<<ListboxSelect>>', cursorSelect)
 mylist.bind('<Double-1>', lambda x: changeWorkingDir())
 
@@ -637,18 +615,8 @@ populateListBox(contents)
 
 populateListBoxServ(remoteList)
 
-
-#mylist.grid(row = 3, column = 0, sticky = W+E+N+S)
-
 yscrollbar.config( command = mylist.yview )
 xscrollbar.config( command = mylist.xview )
-
-##############################################################################################################
-
-
-# showDirContents()
-
-#localFrame = Canvas(window, width = fileSysX*1.5, height = fileSysY, relief = SUNKEN, bg = 'white' )
 
 window.protocol("WM_DELETE_WINDOW", disconnect)
 window.mainloop()
