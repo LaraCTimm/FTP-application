@@ -68,27 +68,38 @@ def printToTerminal(sentence):
 
 # Function to delete local file
 def delLocalButton():
+	global mypath
 	global selectedLocal
 	if(len(selectedLocal) < 1):
 		tkMessageBox.showinfo("Deletion Error", "No file selected!")
 	elif os.path.isfile(selectedLocal) == False:
 		tkMessageBox.showinfo("Deletion Error", "Directories cannot be deleted. \n Please select a file.")
 	else:
-		printToTerminal(selectedLocal + ' file will be deleted')
-		#																				<---------------------- Delete file from local
+		if os.path.isfile(selectedLocal) == True:
+			printToTerminal(selectedLocal + ' file will be deleted')
+			os.remove(selectedLocal)
+			contents = os.listdir(mypath)
+			populateListBox(contents)
+		else:
+			tkMessageBox.showinfo("Deletion Error", "Cannot delete directory. Please select file instead.")
 
 # Function to upload local file
 def uplLocalButton():
 	global selectedLocal
-	if(len(selectedLocal) < 1):
-		tkMessageBox.showinfo("Upload Error", "No file selected!")
-	elif os.path.isfile(selectedLocal) == False:
-		tkMessageBox.showinfo("Upload Error", "Directories cannot be Uploaded. \n Please select a file.")
+	if isConnected == True:
+		if(len(selectedLocal) < 1):
+			tkMessageBox.showinfo("Upload Error", "No file selected!")
+		elif selectedLocal[0] == '>':
+			tkMessageBox.showinfo("Upload Error", "Directories cannot be Uploaded. \n Please select a file.")
+		else:
+			logic.PASV()
+			printToTerminal(logic.reply)
+			logic.STOR(mypath + '\\' + selectedLocal)
+			printToTerminal(logic.reply)
+			getDirFiles()
+			print selectedLocal + ' file will be uploaded'
 	else:
-		print selectedLocal + ' file will be uploaded'
-		#																				<---------------------- Upload file from local
-
-	print 'file will be uploaded'
+		tkMessageBox.showinfo("Upload Error", "Please connect to server before uploading file.")
 
 # Function to delete remote file
 def delServButton():
@@ -104,24 +115,32 @@ def delServButton():
 
 # Function to download remote file
 def dnlServButton():
+	global mypath
 	global selectedRemote
 	if(len(selectedRemote) < 1):
 		tkMessageBox.showinfo("Download Error", "No file selected!")
-	elif os.path.isfile(selectedRemote) == False:
+	elif selectedRemote[0] == '>':
 		tkMessageBox.showinfo("Download Error", "Directories cannot be downloaded. \n Please select a file.")
 	else:
-		print selectedRemote + ' file will be downloaded'
-		#																				<---------------------- Download file from server
+		print selectedRemote[5:-1] + ' file will be downloaded'
+		logic.PASV()
+		logic.RETR(selectedRemote[5:-1])
+		contents = os.listdir(mypath)
+		populateListBox(contents)
 
-	print 'file will be downloaded'
+
+	
 
 # Function to create directory on the server
 def mkdrServButton():
-	print 'make dir: ' + servDir.get()
-	directoryName = servDir.get()
-	logic.MKD(directoryName)
-	getDirFiles()
-		#																				<---------------------- make directory
+	global isConnected
+	if isConnected == True:
+		print 'make dir: ' + servDir.get()
+		directoryName = servDir.get()
+		logic.MKD(directoryName)
+		getDirFiles()
+	else:
+		tkMessageBox.showinfo("New Directory Error", "Cannot make directory whilst disconnected.")
 
 
 # Clear entry functions
@@ -147,11 +166,10 @@ def getDirFiles():
 	remoteList=['...']
 	for fileDet in logic.directoryArray:
 		index = fileDet.index(':')
-		printToTerminal(fileDet[(index+4):])
 		if fileDet[0] == 'd':
 			remoteList.append('>   '+fileDet[(index+4):])
 		else:
-			remoteList.append('    '+fileDet[(index+4):])
+			remoteList.append('     '+fileDet[(index+4):])
 
 	populateListBoxServ(remoteList)
 
@@ -172,7 +190,7 @@ def doubleClick(object):
 			button.config(bg='white')
 
 	oldSelect = selectedLocal
-	selectedLocal = mypath + '\\' + contents[object]
+	selectedLocal = contents[object]
 	if contents[object] == '...':
 		getCdup()
 		terminalText.insert('1.0', 'Changed directory to ' + mypath + '\n')
@@ -188,7 +206,6 @@ def doubleClick(object):
 		fileToSend = mypath + '\\' + contents[object]
 		terminalText.insert('1.0','Send file: ' + fileToSend + '\n')
 		terminalText.pack()
-		#																		<------------------------- Upload file 'fileToSend'
 
 # Run terminal function
 def run(event):
@@ -196,8 +213,7 @@ def run(event):
 	terminalEntry.delete(0, END)	
 	terminalText.insert('1.0','cmd: ' + customCommand + '\n')
 	terminalText.pack()
-	#																			<------------------------ Custom command to be run
-	# os.system(event.widget.get())
+
 	sentence = customCommand
 	try:
 		functionName = sentence[:4].strip().upper()
@@ -272,6 +288,7 @@ def run(event):
 
 # Called on window close or disconnect
 def disconnect():
+	global isConnected
 	if isConnected == True:
 		terminalText.insert('1.0','Disconnecting' + '\n')
 		terminalText.pack()
@@ -305,6 +322,7 @@ def showDirContents():
 
 # START CLIENT
 def connectButton():
+	global isConnected
 	if userEntry.get() == 'Username' or passEntry.get() == 'Password' or addressEntry.get() == 'ServerAddress':
 		tkMessageBox.showinfo("Login Error", "Please enter a username, password and address.")
 	else:
@@ -320,6 +338,7 @@ def connectButton():
 		print 'Response:', logic.reply
 		if logic.reply[:3] == '230':  
 			getDirFiles()
+			isConnected = True
 
 
 		terminalText.insert('1.0', "Entered username:" + userEntry.get()+"\n")
@@ -333,7 +352,6 @@ def connectButton():
 
 
 		
-		# 										<----------------------------------------------- Run log in  with USR and PASS, etc
 
 
 
@@ -486,7 +504,7 @@ def cursorSelect(evt):
     if value == '...':
         goUpDir()
     else:
-    	selectedLocal = mypath + '\\' + value[5:]
+    	selectedLocal = value[5:]
 
 def cursorSelectServ(evt):
 	global selectedRemote
@@ -504,7 +522,7 @@ def cursorSelectServ(evt):
 	if value == '...':
 		goUpDirServ()
 	else:
-		selectedRemote = remotePath + '\\' + value
+		selectedRemote = value
 		print selectedRemote
 
 def goUpDir():
@@ -523,7 +541,6 @@ def goUpDirServ():
 	remotePath = '\\'.join(var[:-1])
 	logic.CDUP()
 	getDirFiles()
-	# populateListBoxServ(contents)
 	serverAdd = Label(window, text=remotePath,bg='black',fg='white',width=50).grid(column=2,row=2,columnspan=3)
 
 def changeWorkingDir():
