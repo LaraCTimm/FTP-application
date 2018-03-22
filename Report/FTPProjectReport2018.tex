@@ -109,7 +109,7 @@ The server is implemented in accordance with the RFC~959 specification. The impl
 To allow for more than one client to be connected to the server at a time, the server program is multithreaded. Each new client connection is handled by a separate thread, and up to five simultaneous connections can be established by FTP clients. 
 
 %errors are communicated in messages to client
-To communicate file, system and transfer status to the client, the server makes use of a number of RFC~959 specified reply codes. These codes enable the client to detect errors and react accordingly. Further discussion of this process can be found in Section~\ref{command/reply}
+To communicate file, system and transfer status to the client, the server makes use of a number of RFC~959 specified reply codes. These codes enable the client to detect errors and react accordingly. Further discussion of this process can be found in Section~\ref{sec:command/reply}
 
 
 \subsubsection*{Unimplemented features: }
@@ -163,27 +163,28 @@ In accordance with the server implementation, the client is only capable of hand
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section{FTP COMMAND/REPLY OVERVIEW}\label{command/reply} % talk about implemented functions and features from a server perspective - command yields reply
+\section{FTP COMMAND/REPLY OVERVIEW}\label{sec:command/reply} % talk about implemented functions and features from a server perspective - command yields reply
 
-1yz   Positive Preliminary reply
+The format of replies to FTP commands are designed to make sure that requests and actions are well synchronized when transferring files, and to keep the client informed about the status of the server~\cite{rfc959}. There are 5 categories of FTP replies, characterised by the first digit of the three digit reply code~\cite{rfc959}. 
 
-requested action initiated, expect another reply before proceeding with a new command. can indicate that was accepted and must now pay attention to data connections
+The categories are: 
 
-2yz   Positive Completion reply
+\textbf{1**	Positive Preliminary reply:} 
+requested action initiated, expect reply before sending new command.
 
-requested action completed, new command can be sent
+\textbf{2**	Positive Completion reply:} 
+Requested action completed, new command can be sent.
 
-3yz   Positive Intermediate reply
+\textbf{3**   Positive Intermediate reply:} 
+Command received, server waiting for further information.
 
-command is accepted but its pending reciept of further information. user should send another command specifying the info. (used in command sequence groups)
+\textbf{4**   Transient Negative Completion reply:} 
+Command not accepted, action did not take place. Error is temporary and action may be requested again.
 
-4yz   Transient Negative Completion reply
+\textbf{5**   Permanent Negative Completion reply:} 
+Command not accepted, action did not take place. User discouraged from repeating same request.
 
-command not accepted, action did not take place. Error is temp and action may be requested again. User process is encouraged to try again. replies are 4yz if the commands can be repeated without any change in command form or in properties of the User or Server(command spelled same with some arguements used)
-
-5yz   Permanent Negative Completion reply
-
-command not accepted, action did not take place. user discouraged from repeating same request in the same sentence. (change spelling or alter directory status)
+In the designed file transfer application, at least one reply was implemented from each category. A list of the client commands features and their associated server responses are detailed in Appendix~\ref{comm\reply table}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{DETAILED FEATURE IMPLEMENTATION} % talk about details of how the complex functions work
@@ -234,7 +235,7 @@ command not accepted, action did not take place. user discouraged from repeating
 
 \begin{appendix}
 	
-\section{Sector and Share Selection}
+\section{Implemented FTP Commands/Replies}\label{comm\reply table}
 
 
 \end{appendix}
