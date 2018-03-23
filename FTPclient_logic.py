@@ -62,6 +62,7 @@ class clientLogic():
         self.getReply()
                 
         if self.reply[:2] == '221':
+            self.clientSock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
             self.clientSock.close()
 
     # TRANSFER PARAMETER COMMANDS --------------------------------------------------------------
@@ -284,6 +285,11 @@ class clientLogic():
 
     def LIST(self):
         # ask the server for a list of the files in the current working directory
+        
+        # ensure that the data is sent in ASCII mode
+        self.clientSock.send('TYPE A\r\n')      
+        reply = self.clientSock.recv(1024)
+
         self.clientSock.send('LIST\r\n')
 
         # ensure the server is setup to make a data connection
