@@ -119,6 +119,7 @@ In accordance with the RFC~959 minimum requirements, the default structure and f
 
 The FTP client is composed of two working parts, a Graphical User Interface (GUI) and a logical FTP client. The user interacts with the GUI which instructs the FTP client to interact with the FTP server. In this way the interface is separated from the logic layer, following the separation of concerns principle.
 
+\vspace*{-2mm}
 \subsubsection{Client Logic} $     $
 
 The FTP client is hosted locally and can connect to a server hosted either locally (on the client's computer) or over a LAN connection. To connect to the server, the client must know the public IP address and port on which the server is listening for a connection. These parameters are input to the GUI described in Section~\ref{GUI}.
@@ -127,9 +128,11 @@ The responsibility of the FTP client is to interact with the server in a manner 
 
 It is the responsibility of the client to handle errors that are not relevant to the server. Such errors include: trying to upload a file that doesn't exist in the clients working directory and handling errors to do with incorrect formatting of client commands. Although these checks are implemented in the server program, the client will most often prevent these user errors from occurring.
 
-\subsubsection{Client Interface: }\label{GUI} $     $
-%Sash%%%%%%%%%%%%%%%
+\vspace*{-2mm}
+\subsubsection{Client Interface} $      $
 
+test text
+%Sash%%%%%%%%%%%%%%%
 %The FTP client is handled by a simple GUI. 
 
 %input params (name pass addr IP)
@@ -145,7 +148,7 @@ It is the responsibility of the client to handle errors that are not relevant to
 
 %client disconnects by?
 
-
+\vspace*{-\baselineskip}
 \subsubsection*{Unimplemented features: } 
 In accordance with the server implementation, the client is only capable of handling the File structure and Stream mode of data transmission as specified in the minimum RFC~959 requirements.
 
@@ -182,27 +185,67 @@ In the designed file transfer application, at least one reply was implemented fr
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{DETAILED FEATURE IMPLEMENTATION} % talk about details of how the complex functions work
 
+Both the client and the server were implemented using Python 2.7. Essential Python module, utilised in both the FTP client and server, are the \texttt{socket} and \texttt{os} modules~\cite{osModule,socketModule}. The \texttt{socket} module is responsible for the creation of all TCP sockets used to make connections and handle all communications between the client and server. The \texttt{os} module enables the file transfer application to interface with the file system of both the server and client.
+
+FTP commands are sent via a TCP control connection, established at port 21 of the server~\cite{topDownApproach6th}. FTP dictates that a standard command and reply format must be followed for all communications on this connection, in accordance with RFC~959~\cite{rfc959}. The command and reply formats are demonstrated below, where $<$SP$>$ indicates a space and $<$CRLF$>$ indicates the end of line sequence '\textbackslash r\textbackslash n'.
+
+\begin{tabular}{ll}
+
+Command:& $<$CMD$>$$<$SP$>$$<$argument$>$$<$CRLF$>$ \\[5pt]
+Reply:& $<$3-digit code$>$$<$description$>$$<$CRLF$>$ \\[5pt]
+
+\end{tabular} 
+
+\subsection{Server}
+
+ The server program is multi-threaded, making use of Python's \texttt{threading} module, to allow for simultaneous client connections. When the server code is executed, a \texttt{serverThread} object is created which listens for and accepts new client connections. When a connection is made, a \texttt{clientThread} object is created and assigned to a new thread. The thread is passed the client's connection socket and address particulars as argument.
+ 
+ Within each \texttt{clientThread} object, the server continuously accepts commands from the client (using \texttt{recv()}), performs the desired action and returns a reply (using \texttt{send()}). Based on the server reply, the client is able to determine the success/failure of the command as well determine changes in transfer parameters and establish the server status. All implemented FTP commands are described in the remainder of this section.
+ 
+\vspace*{-2mm}
+\subsubsection{Access Control Commands} $   $
+
+\subsubsection*{Authentication:} \vspace*{-\baselineskip}
+Once connected, a client must be authenticated. The \texttt{USER} and \texttt{PASS} commands are expected with plaintext username and password arguments. For a successful authentication, the username and password must match those contained in the file \textit{userdata.txt}. The server maintains a repository for each registered user on its file system. 
+
+\subsubsection*{Navigation:}
+To navigate the server file system, the \texttt{CWD} and \texttt{CDUP} commands are implemented. \texttt{CWD} takes a directory name or path as argument. \texttt{CDUP} is a specialised \texttt{CWD} command where the destination is one directory up in the directory tree. The server implementation of \texttt{CWD} makes use of \texttt{CDUP} if the arguement is the name of the wprking directory.
+
+To exit the control connection, the \texttt{QUIT} command is used. The reply received by the client causes the connection socket to be shut down and the port freed. 
+
+\vspace*{-2mm}
+\subsubsection{Transfer Parameter Commands} $   $
+
+All parameters controlling data transfer have default values, the following commands need only be called to change the defaults~\cite{rfc959}. 
+
+\vspace*{-2mm}
+\subsubsection*{Data Connection:} A data connection can be opened in passive or active mode. The former is default, and involves a request for the server to listen on an available data port for a data connection~\cite{rfc959}. \texttt{PASV} initiates a server response 
+containing the internet address and port to which the client must connect to transfer data. The active mode command, \texttt{PORT}, has as arguements the internet address and port to which the server must connect to transfer data~\cite{rfc959}. In both cases, the port data is transmitted in two 8-bit fields. To recreate the 16-bit port address, the formula is used: $port = 256*byteUpper + byteLower$.
+
+\vspace*{-2mm}
+\subsubsection*{Transfer Mode:} 
+As per the minimum requirements specified by RFC~959, only the default transfer structure and transfer mode are implemented. \texttt{STRU} allows the transfer structure to be set to File and \texttt{MODE} allows the transfer mode to be set to Stream. To cover a large range of file formats, both ASCII (text files) and Binary (media) representation types are implemented. The client determines the argument of the TYPE command as either A (ASCII) or I (Binary) depending on the file extension.
+
+\vspace*{-2mm}
+\subsubsection{Service Commands} $    $
+
+\vspace*{-2mm}
+\subsubsection*{File Transfer:}
 
 
-\subsection{Client Authentication}
+\subsubsection*{File System Status: }
+The \texttt{PWD} and \texttt{LIST} commands are intended to allow the client to know the status of the server's file system at any point in time. PWD requests that the server return the full path of the client's working directory within their 
 
-\subsection{Directory Traversal}
+\subsubsection*{File System Action: }
 
-\subsection{Data Connection Initiation}
+The \texttt{NOOP} fulfils no other purpose than to act as a ping to the server. Receiving a \texttt{NOOP} command prompts the server to return an OK response.
 
-\subsection{File Transfer}
+\subsection{Client}
 
-\subsection{Miscellaneous}
+%Sash%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+% I rate it'll be nice to talk about stuff from a button point of view. like what chain of events happenss when the things are initiated. I'll email you
 
-
-%\begin{figure}[h]
-%	\centering
-%	\includegraphics[width=0.9\columnwidth]{collisions.png}
-%	\caption{Illustration of the collision relationships that exist between game objects. Arrowheads indicate damage dealt.}
-%	\raggedright
-%	\label{fig:collisions}
-%\end{figure}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{DIVISION OF WORK}
@@ -236,11 +279,11 @@ It was noted that the client is aware of only their own base directory and canno
 
 Compared to the interaction with that standard FTP server, the chosen standard FTP client is far less compatible with the implemented FTP server. Basic FTP commands are successful. FileZilla is able to authenticate the user, open data connections and upload and download files without difficulty. Commands beyond the minimum implementation scope result in confusing results.
 
-Unlike the implemented FTP client, FileZilla requests that the client provide a TLS or SSL authentication for secure data transfer. FileZilla does not always make use of the CDUP command; rather a CWD command with the path of the working directory as argument. 
+Unlike the implemented FTP client, FileZilla requests that the client provide a TLS or SSL authentication for secure data transfer. FileZilla does not always make use of the \texttt{CDUP} command; rather a \texttt{CWD} command with the path of the working directory as argument. 
 
-FileZilla appears to store a history of the previous directory listing, so performing a change directory up request does not cause FileZilla to send a change directory command or request a new directory listing. As a result the working directory of the server is not updated and errors arise. All the problems associated with directory traversal may be due to FileZilla expecting a directory list in a different form than the one which the server provides. The command LIST -a may expect a different format than the one provided.
+FileZilla appears to store a history of the previous directory listing, so performing a change directory up request does not cause FileZilla to send a change directory command or request a new directory listing. As a result the working directory of the server is not updated and errors arise. All the problems associated with directory traversal may be due to FileZilla expecting a directory list in a different form than the one which the server provides. The command \texttt{LIST~-a} may expect a different format than the one provided.
 
-Upon issuing a request for file download, FileZilla may request the size and modification time of the file using SIZE and MDTM requests. Although the server does not recognize these commands, files can still be retrieved.
+Upon issuing a request for file download, FileZilla may request the size and modification time of the file using \texttt{SIZE} and \texttt{MDTM} requests. Although the server does not recognize these commands, files can still be retrieved.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{CRITICAL ANALYSIS}
 
