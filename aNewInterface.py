@@ -504,9 +504,9 @@ def cursorSelect(evt):
     value = str((mylist.get(mylist.curselection())))
     print value
     mylist.activate(0)
-    if value != '..':
-        # goUpDir()
-    # else:
+    if value == '..':
+        selectedLocal = '..'
+    else:
     	selectedLocal = value[5:]
 def cursorSelectServ(evt):
 	global selectedRemote
@@ -519,7 +519,7 @@ def cursorSelectServ(evt):
 	remotePath = reply[1]
 	if value == '..':
 		selectedRemote = value
-		goUpDirServ()
+		# goUpDirServ()
 	else:
 		selectedRemote = value
 		print selectedRemote
@@ -539,9 +539,10 @@ def goUpDirServ():
 	var = remotePath.split('\\')
 	remotePath = '\\'.join(var[:-1])
 	logic.CDUP()
+	serverAdd = Label(window, text=remotePath,bg='black',fg='white',width=60).grid(column=2,row=2,columnspan=3)
+	getDirFiles()
 	if logic.reply[0] == '5': 
 		getDirFiles()
-		serverAdd = Label(window, text=remotePath,bg='black',fg='white',width=60).grid(column=2,row=2,columnspan=3)
 
 # Function called to change local, working directory
 def changeWorkingDir():
@@ -569,7 +570,9 @@ def getRemPath():
 def changeWorkingDirServ():
 	global remotePath
 	value = str((servlist.get(servlist.curselection())))
-	if value[0] == '>':
+	if value == '..':
+		goUpDirServ()
+	elif value[0] == '>':
 		print remotePath+'\\' +value[4:-1]
 		print 'change dir'
 		logic.CWD(value[4:-1])
