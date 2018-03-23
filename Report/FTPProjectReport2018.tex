@@ -190,12 +190,11 @@ Both the client and the server were implemented using Python 2.7. Essential Pyth
 FTP commands are sent via a TCP control connection, established at port 21 of the server~\cite{topDownApproach6th}. FTP dictates that a standard command and reply format must be followed for all communications on this connection, in accordance with RFC~959~\cite{rfc959}. The command and reply formats are demonstrated below, where $<$SP$>$ indicates a space and $<$CRLF$>$ indicates the end of line sequence '\textbackslash r\textbackslash n'.
 
 \begin{tabular}{ll}
-
 Command:& $<$CMD$>$$<$SP$>$$<$argument$>$$<$CRLF$>$ \\[5pt]
 Reply:& $<$3-digit code$>$$<$description$>$$<$CRLF$>$ \\[5pt]
-
 \end{tabular} 
 
+\vspace*{-2mm}
 \subsection{Server}
 
  The server program is multi-threaded, making use of Python's \texttt{threading} module, to allow for simultaneous client connections. When the server code is executed, a \texttt{serverThread} object is created which listens for and accepts new client connections. When a connection is made, a \texttt{clientThread} object is created and assigned to a new thread. The thread is passed the client's connection socket and address particulars as argument.
@@ -231,14 +230,24 @@ As per the minimum requirements specified by RFC~959, only the default transfer 
 
 \vspace*{-2mm}
 \subsubsection*{File Transfer:}
+Using the \texttt{RETR} and \texttt{STOR} commands, the user can download and upload files from and to the server file system. 
 
+The \texttt{RETR} implementation ensures the file exists before opening it in the appropriate read mode specified by the \texttt{TYPE} command. A data connection is opened by \texttt{open\_dataSocket()} and the requested file is read and subsequently transmitted on the data connection in 1024 byte chunks. When the transmission is complete, the data connection is closed by \texttt{close\_dataSocket()} 
 
+A \texttt{STOR} command causes a file to be opened, in the correct write mode, on the server file system. As with a \texttt{RETR} request, a data connection is opened to recieve the requested data. While data is being received, it is written to file. The data connection is closed when that transfer is completed.
+
+\vspace*{-2mm}
 \subsubsection*{File System Status: }
-The \texttt{PWD} and \texttt{LIST} commands are intended to allow the client to know the status of the server's file system at any point in time. PWD requests that the server return the full path of the client's working directory within their 
+The \texttt{PWD} and \texttt{LIST} commands allow the client to know the status of the server's file system at any point in time. \texttt{PWD} requests that the server return the full path of the client's working directory as a parameter in the reply message. A \texttt{LIST} request prompts the server to send a file listing of the current working directory. To generate the file statistics, the \texttt{createItemString()} function is called and each item string is appended to a string containing the information for the full directory. This complete string is sent over TCP data connection, in ASCII mode, to the client. 
 
+\vspace*{-2mm}
 \subsubsection*{File System Action: }
+The \texttt{MKD}, \texttt{RMD} and \texttt{DELE} commands enable the client to make and delete a directory as well as delete a file on the server file system. All three functions take a file/directory name or path as argument. IF a directory is deleted, the entire contents of the directory is removed.
 
 The \texttt{NOOP} fulfils no other purpose than to act as a ping to the server. Receiving a \texttt{NOOP} command prompts the server to return an OK response.
+
+An \texttt{AUTH} command was implemented after system testing with the standard FTP client FileZilla. \texttt{AUTH} requests expect authentication details to be encrypted before transmission. In the implementation, \texttt{AUTH} simply responds with a message requesting log in with \texttt{USER} and \texttt{PASS}.
+
 
 \subsection{Client}
 
@@ -253,17 +262,22 @@ The \texttt{NOOP} fulfils no other purpose than to act as a ping to the server. 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{RESULTS}\label{results}
 
-To test the system fully, testing of all functionally on the client and server side is required. This must therefore include testing the FTP client with the implemented FTP server as well as with a standard FTP server. Additionally, the designed FTP server should be tested with a standard FTP client, namely FileZilla.
+To test the system fully, testing of all functionally on the client and server side is required. This must therefore include testing the FTP client with the implemented FTP server as well as with a standard FTP server. Additionally, the designed FTP server should be tested with a standard FTP client, namely FileZilla. 
 
-Using the Wireshark platform, a copy of every packet of data sent over a wired or wireless internet connection is recorded. Wireshark is used to test the developed file transfer application.
+Functionality testing begins with ensuring client connection and authentication. The client can then navigate around their remote file repository. 
 
-Functionality testing begins with ensuring the client can connect. After the server confirms that a control connection has been made, the user logs in with their username and password. The client can then navigate around their own remote file repository. 
+To upload or download files, the file type is set, a data connection is established and the file is transmitted or received. The client can create directories, as well as delete them. Files however, cannot be created;  only deleted.
 
-To upload or download files, the file type is set, a data connection is established and the file is transmitted or received. The client can create directories, as well as delete. Files however, cannot be created;  only deleted.
+Wireshark is used to test the developed file transfer application.
+Appendix~\ref{sec:wireshark} contains screenshots of the described interactions. 
 
-Using Wireshark, these interactions were logged. Appendix~\ref{sec:wireshark} contains screenshots of the described interactions. 
+\subsection{FTP client interaction with FTP server}
 
-\subsection{FTP Client interaction with FTP server}
+Interactions between the implemented FTP client and server are seamless. All implemented functionality works as expected.
+
+In the test case, the client connects to the server and logs in. The client gets the directory listing and is able to navigate the file system. New directories can be created and deleted and files can be deleted. The data connection works in both passive and active mode (\texttt{PORT}) and both binary and ASCII files can be uploaded and downloaded.
+ 
+Figure~??REF?? shows the developed client GUI and depicts the local and remote file systems. 
 
 \subsection{FTP Client interaction with standard FTP server}
 
@@ -271,7 +285,7 @@ Similar to that of the FTP client/FTP server interaction, interfacing with the s
 
 Figure~\ref{fig:WitsWS1} depicts client authentication, directory listing and navigation, the initiation of a passive data connection, binary file download and file deletion. 
 
-Figure~\ref{fig:WitsWS1} depicts the creation and deletion of directories, ASCII file upload, printing and navigating up a directory, the initiation of an active data connection (PORT), the request of an OK response and closing the control connection.
+Figure~\ref{fig:WitsWS1} depicts the creation and deletion of directories, ASCII file upload, printing and navigating up a directory, the initiation of an active data connection, the request of an OK response and closing the control connection.
 
 It was noted that the client is aware of only their own base directory and cannot navigate higher in the directory tree. This feature ensures that the client cannot make changes to files they are not permitted to edit.
 
@@ -294,7 +308,15 @@ Upon issuing a request for file download, FileZilla may request the size and mod
 \subsection{Future Improvements}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section{CODE STRUCTURE}
+\section{CODE STRUCTURE AND REQUIREMENTS}
+
+\subsubsection*{Code Structure: } The server code is contained within a single file, \textit{FTPserver.py}, and defines the two threading classes used to handle simultaneous client connections. All FTP functionality is implemented through methods defined in the \texttt{clientThread} class. The client implementation is divided into logical and interface components. The interface makes use of the \texttt{clientLogic} class to initiate and handle all interactions with the server.  %%% SASH %%%
+
+\subsubsection*{Requirements: }
+%%%% Sash %%%% whats needed to run code and how you compile and if you have to download andthing fot tkinter etc
+
+% python FTPserver.py to run server etc. Look at kayla's report
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{CONCLUSION}
