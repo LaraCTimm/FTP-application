@@ -62,7 +62,8 @@ def getCdup():
 
 # Function to print to displayed terminal
 def printToTerminal(sentence):
-	terminalText.insert('1.0', sentence + '\n')
+	terminalText.insert(END, sentence + '\n')
+	terminalText.see(END)
 	terminalText.pack()
 
 # Function to delete local file
@@ -466,8 +467,17 @@ localUpl.pack(side="right")
 terminalFrame = Frame(colormap="new",relief = SUNKEN,borderwidth=2,bg='black')
 terminalFrame.grid(row=4,column=0,columnspan=5,padx=framePadX,pady=framePadY)
 terminalText = Text(terminalFrame,bg='black',fg='white',height=14,width=120)
+terminalText.see(END)
 terminalText.pack()
-
+# Clearing terminal
+printToTerminal('\n')
+printToTerminal('\n')
+printToTerminal('\n')
+printToTerminal('\n')
+printToTerminal('\n')
+printToTerminal('\n')
+printToTerminal('\n')
+printToTerminal('\n')
 # Terminal Entry
 terminalEntry = Entry(window,width=160,bg='black',fg='white')
 terminalEntry.insert(0,">Enter custom command>>")
