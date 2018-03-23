@@ -1,5 +1,4 @@
 import socket
-import sys
 import os
 
 isLoggedIn=False
@@ -71,7 +70,7 @@ class clientLogic():
         # specifies and sets the address/port to be used in the data connection
 
         IPChunks = ipAddr.split('.')
-        byteU = int(port / 256)     # convert port to base 2
+        byteU = int(port / 256)         # convert port to base 2
         byteL = port % 256
 
         connectionString = '%s,%i,%i' % (','.join(IPChunks[:4]), byteU, byteL)
@@ -330,16 +329,8 @@ class clientLogic():
         self.getReply()
     
     def RMD(self, dirName):
-        # response = raw_input('You are about to remove a directory and all its contents.\nAre you syre you want to proceed? (y/n): ')
-        # if response == 'y':
-        #     self.clientSock.send('RMD  ' + dirName)
-        #     self.getReply()
-        # elif response == 'n':
-        #     return
-        # else:
-        #     print 'Invalid response.'
-
         # instruct that server to delete the directory with name dirName
+
         self.clientSock.send('RMD ' + dirName +'\r\n')
         self.getReply()
     

@@ -4,8 +4,8 @@ from FTPclient_logic import clientLogic
 
 if sys.argv[1] == 'local':
     servIP = socket.gethostbyname(socket.gethostname())
-elif sys.argv[1].upper() == 'IP':
-    servIP = sys.argv[2]
+elif sys.argv[1].strip('.').isdigit():
+    servIP = sys.argv[1]
 else:
     servIP = socket.gethostbyname(sys.argv[1])
     
