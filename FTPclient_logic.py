@@ -21,16 +21,14 @@ class clientLogic():
         self.passiveServerIP = ''
         self.baseDirectory = os.path.abspath('./clientDirectory')
         self.calledPortPasv = False
+        self.doneSending = False
+        self.doneReceiving = False
 
     # NEED TO SET THIS UP TO DEAL WITH REPLIES THAT EXPECT OTHER REPLIES ##########################
     def getReply(self):
         self.reply = self.clientSock.recv(1024)
-        reply = self.reply
-        print 'Response:', reply
+        print 'Response:', self.reply
         print ("")
-        
-        if reply[:2] == '221':
-            self.clientSock.close()
 
     # ACCESS CONTROL COMMANDS ------------------------------------------------------------------
 
@@ -63,6 +61,9 @@ class clientLogic():
 
         self.clientSock.send('QUIT\r\n')
         self.getReply()
+                
+        if self.reply[:2] == '221':
+            self.clientSock.close()
 
     # TRANSFER PARAMETER COMMANDS --------------------------------------------------------------
 
@@ -94,6 +95,7 @@ class clientLogic():
         #      the resultant reply for opening data connection
 
         self.clientSock.send('PASV\r\n')
+
         reply = self.clientSock.recv(1024)        
         print 'Response:', reply
         if reply[0] == '5':         # if the PASV command fails don't carry on
@@ -119,21 +121,24 @@ class clientLogic():
     def TYPE(self, fileName):
         # send the server the type code for the data being transferred
 
-        if fileName.find('.') != -1:
+        if fileName.find('.') != -1:     
             if fileName.find('.txt') != -1 or \
                 fileName.find('.html') != -1 or \
                 fileName.find('.pl') != -1 or \
                 fileName.find('.cgi') != -1:
+
                 self.binaryFile = False
                 self.clientSock.send('TYPE A\r\n')
+                self.getReply()
             else:
                 self.binaryFile = True
                 self.clientSock.send('TYPE I\r\n')
+                self.getReply()
+                    
         else:
             print 'Specified file type not recognised'
             return
         
-        self.getReply()
 
     def STRU(self, structureCode):
         # send file structure to the server
@@ -151,6 +156,7 @@ class clientLogic():
 
     def RETR(self, fileName):
         # receive a copy file over data connection
+        self.doneReceiving = False
     
         # send name of file to retrieve to server
         self.clientSock.send('RETR '+fileName +'\r\n')
@@ -179,9 +185,10 @@ class clientLogic():
         requestedFile.close()
         self.close_dataSocket()
         print "Done Receiving"
+        self.doneSending = True
 
-        response = self.clientSock.recv(1024)
-        print 'Response:', response
+        self.getReply()
+        response = self.reply
 
         # if file transfer was successful then exit otherwise delete the file 
         #       created in the server directory that isn't right
@@ -202,6 +209,7 @@ class clientLogic():
 
         # only send a STOR command if the file exists on the client
         if os.path.exists(filePath):
+            self.doneSending = False
             self.clientSock.send('STOR '+fileName +'\r\n')
         else:
             print 'File not found'
@@ -230,17 +238,17 @@ class clientLogic():
         self.close_dataSocket()
 
         print "Done Sending"
+        self.doneSending = True
 
-        response = self.clientSock.recv(1024)
-        print 'Response:', response
+        self.getReply()
 
-        if response[:3] == '226':
+        if self.reply[:3] == '226':
             return
-        elif response[:3] == '550':
+        elif self.reply[:3] == '550':
             print 'File trainsfer failed'
         else:
             print 'Unknown transfer error occured'
-            self.getReply()
+            # self.getReply()
 
     def open_dataSocket(self):
         # passive mode -------------------------------------------------------------------
@@ -248,15 +256,13 @@ class clientLogic():
             # open the data socket, connect to server passive port and receive
             self.dataStreamSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM) 
             self.dataStreamSocket.connect((self.passiveServerIP, self.passiveServerPort))
-            reply = self.clientSock.recv(1024)
-            print 'Response:', reply 
+            self.getReply() 
             
-            if not (reply[:3] == '150'):    # if the connection is not made, exit the function
+            if not (self.reply[:3] == '150'):    # if the connection is not made, exit the function
                 return
         # active mode --------------------------------------------------------------------
         else:
-            reply = self.clientSock.recv(1024)
-            print 'Response:', reply 
+            self.getReply()
             self.dataStreamSocket, addr = self.activeSocket.accept()
     
     def close_dataSocket(self):

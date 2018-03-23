@@ -182,6 +182,8 @@ In the designed file transfer application, at least one reply was implemented fr
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{DETAILED FEATURE IMPLEMENTATION} % talk about details of how the complex functions work
 
+
+
 \subsection{Client Authentication}
 
 \subsection{Directory Traversal}
@@ -218,9 +220,35 @@ To upload or download files, the file type is set, a data connection is establis
 
 Using Wireshark, these interactions were logged. Appendix~\ref{sec:wireshark} contains screenshots of the described interactions. 
 
-Figure ~\ref{fig:WitsWS1} yuyguihlkjhgfghjk
+\subsection{FTP Client interaction with FTP server}
+
+\subsection{FTP Client interaction with standard FTP server}
+
+Similar to that of the FTP client/FTP server interaction, interfacing with the standard server proves to be successful for all implemented functionality. 
+
+Figure~\ref{fig:WitsWS1} depicts client authentication, directory listing and navigation, the initiation of a passive data connection, binary file download and file deletion. 
+
+Figure~\ref{fig:WitsWS1} depicts the creation and deletion of directories, ASCII file upload, printing and navigating up a directory, the initiation of an active data connection (PORT), the request of an OK response and closing the control connection.
+
+It was noted that the client is aware of only their own base directory and cannot navigate higher in the directory tree. This feature ensures that the client cannot make changes to files they are not permitted to edit.
+
+\subsection{Standard FTP Client interaction with FTP server}
+
+Compared to the interaction with that standard FTP server, the chosen standard FTP client is far less compatible with the implemented FTP server. Basic FTP commands are successful. FileZilla is able to authenticate the user, open data connections and upload and download files without difficulty. Commands beyond the minimum implementation scope result in confusing results.
+
+Unlike the implemented FTP client, FileZilla requests that the client provide a TLS or SSL authentication for secure data transfer. FileZilla does not always make use of the CDUP command; rather a CWD command with the path of the working directory as argument. 
+
+FileZilla appears to store a history of the previous directory listing, so performing a change directory up request does not cause FileZilla to send a change directory command or request a new directory listing. As a result the working directory of the server is not updated and errors arise. All the problems associated with directory traversal may be due to FileZilla expecting a directory list in a different form than the one which the server provides. The command LIST -a may expect a different format than the one provided.
+
+Upon issuing a request for file download, FileZilla may request the size and modification time of the file using SIZE and MDTM requests. Although the server does not recognize these commands, files can still be retrieved.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{CRITICAL ANALYSIS}
+
+\subsection{Successes}
+
+\subsection{Limitations}
+
+\subsection{Future Improvements}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{CODE STRUCTURE}
@@ -331,19 +359,37 @@ Figure ~\ref{fig:WitsWS1} yuyguihlkjhgfghjk
 
 \begin{figure}[h]
 	\centering
-	\includegraphics[width=1\columnwidth]{WitsCaptureAnno1.png}
-	\caption{Wireshark screenshot of functionality testing with standard FTP server}
+	\includegraphics[width=0.9\columnwidth]{ClientServer1anno.png}
+	\caption{blah blahr}
+	\raggedright
+	\label{fig:ourWS1}
+\end{figure}
+
+\begin{figure}[h]
+	\centering
+	\includegraphics[width=0.9\columnwidth]{ClientServer2anno.png}
+	\caption{blah}
+	\raggedright
+	\label{fig:ourWS2}
+\end{figure}
+
+\begin{figure}[h]
+	\centering
+	\includegraphics[width=0.9\columnwidth]{WitsCaptureAnno2.png}
+	\caption{Wireshark screenshot 1 of functionality testing with standard FTP server}
 	\raggedright
 	\label{fig:WitsWS1}
 \end{figure}
 
 \begin{figure}[h]
 \centering
-\includegraphics[width=1\columnwidth]{WitsServerCapture2.png}
-\caption{captionn}
+\includegraphics[width=0.9\columnwidth]{WitsServerCapture2.png}
+\caption{Wireshark screenshot 2 of functionality testing with standard FTP server}
 \raggedright
 \label{fig:WitsWS2}
 \end{figure}
+
+
 
 \end{appendix}
 

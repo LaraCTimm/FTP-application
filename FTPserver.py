@@ -161,7 +161,7 @@ class clientThread(threading.Thread):
         directoryString = command[4:-2]
 
         if directoryString == self.workingDirectory.split('\\')[-2]:
-            self.CDUP('dummy string')
+            self.CDUP('')
             return
 
         # check for variations in commands made by different clients
@@ -319,7 +319,7 @@ class clientThread(threading.Thread):
                     fileChunk = requestedFile.read(1024)        # read from the file
 
                     while fileChunk:                            # while there is still more file to read
-                        print 'Sending...'
+                        # print 'Sending...'
                         self.dataSocket.send(fileChunk)         # send on dataSocket
                         fileChunk = requestedFile.read(1024)    # read some more
                 
@@ -365,7 +365,7 @@ class clientThread(threading.Thread):
 
                 fileChunk = self.dataSocket.recv(1024)      # recieve from data socket
                 while (fileChunk):                          # while the data recieved exists
-                    print "Receiving..."
+                    # print "Receiving..."
                     requestedFile.write(fileChunk)          # write what is recieved to file
                     fileChunk = self.dataSocket.recv(1024)  # continue to recieve from data socket
 

@@ -72,12 +72,12 @@ def delLocalButton():
 	global selectedLocal
 	if(len(selectedLocal) < 1):
 		tkMessageBox.showinfo("Deletion Error", "No file selected!")
-	elif os.path.isfile(selectedLocal) == False:
+	elif os.path.isfile(mypath+'\\'+selectedLocal) == False:
 		tkMessageBox.showinfo("Deletion Error", "Directories cannot be deleted. \n Please select a file.")
 	else:
-		if os.path.isfile(selectedLocal) == True:
-			printToTerminal(logic.reply)
-			os.remove(selectedLocal)
+		if os.path.isfile(mypath+'\\'+selectedLocal) == True:
+			# printToTerminal(logic.reply)
+			os.remove(mypath+'\\'+selectedLocal)
 			contents = os.listdir(mypath)
 			populateListBox(contents)
 		else:
@@ -92,11 +92,13 @@ def uplLocalButton():
 		elif selectedLocal[0] == '>':
 			tkMessageBox.showinfo("Upload Error", "Directories cannot be Uploaded. \n Please select a file.")
 		else:
-			logic.PASV()
+			
 			logic.TYPE(selectedLocal)
-			printToTerminal(logic.reply)
-			logic.STOR(mypath + '\\' + selectedLocal)
-			printToTerminal(logic.reply)
+			logic.PASV()
+			printToTerminal('Uploading file...')
+			logic.STOR(selectedLocal)
+			if logic.reply[:3] == '226':
+				printToTerminal('File Upload Successful\n')
 			getDirFiles()
 	else:
 		tkMessageBox.showinfo("Upload Error", "Please connect to server before uploading file.")
@@ -135,7 +137,10 @@ def dnlServButton():
 		print selectedRemote[5:-1] + ' file will be downloaded'
 		logic.PASV()
 		logic.TYPE(selectedRemote[5:-1])
+		printToTerminal('Downloading file...')
 		logic.RETR(selectedRemote[5:-1])
+		if logic.reply[:3] == '226':
+				printToTerminal('File Download Successful\n')
 		contents = os.listdir(mypath)
 		populateListBox(contents)
 
@@ -306,8 +311,10 @@ def disconnect():
 # Called when disconnect button is pushed
 def disconnectBtn():
 	global isConnected
+	global isLoggedIn
 	if isConnected == True:
 		isConnected = False
+		isLoggedIn = False
 		logic.QUIT()
 		printToTerminal(logic.reply)
 		serverAdd = Label(window, text="",bg='black',fg='white',width=60).grid(column=2,row=2,columnspan=3)
@@ -340,23 +347,26 @@ def showDirContents():
 # START CLIENT
 def connectButton():
 	global isConnected
+	global isLoggedIn
+
 	if userEntry.get() == 'Username' or passEntry.get() == 'Password' or addressEntry.get() == 'ServerAddress':
 		tkMessageBox.showinfo("Login Error", "Please enter a username, password and address.")
 	else:
 		global logic
-		logic = clientLogic(addressEntry.get())
-		reply = logic.clientSock.recv(256)
-		terminalText.insert('1.0', reply)
-		terminalText.pack()
-		isConnected = True
+		if isConnected == False:
+			logic = clientLogic(addressEntry.get())
+			reply = logic.clientSock.recv(256)
+			printToTerminal(reply)
+			isConnected = True
 
 		logic.USER(userEntry.get())
-		printToTerminal( logic.reply)
+		printToTerminal(logic.reply)
 		logic.PASS(passEntry.get())
 		printToTerminal(logic.reply)
+
 		if logic.reply[:3] == '230':  
+			isLoggedIn = True
 			getDirFiles()
-			isConnected = True
 			logic.PWD()
 			remotePath = logic.reply
 			reply = remotePath.split('"')
@@ -529,7 +539,7 @@ def cursorSelectServ(evt):
 	remotePath = reply[1]
 	if value == '..':
 		selectedRemote = value
-		# goUpDirServ()
+		#goUpDirServ()
 	else:
 		selectedRemote = value
 		print selectedRemote
@@ -544,28 +554,33 @@ def goUpDir():
     contents = os.listdir(mypath)
     populateListBox(contents)
     localAdd = Label(window, text=mypath,bg='black',fg='white',width=60).grid(column=0,row=2,columnspan=2)
+
 def goUpDirServ():
 	global remotePath
 	var = remotePath.split('\\')
 	remotePath = '\\'.join(var[:-1])
 	logic.CDUP()
-	serverAdd = Label(window, text=remotePath,bg='black',fg='white',width=60).grid(column=2,row=2,columnspan=3)
-	getDirFiles()
-	if logic.reply[0] == '5': 
+	if not logic.reply[0] == '5':
+		serverAdd = Label(window, text=remotePath,bg='black',fg='white',width=60).grid(column=2,row=2,columnspan=3)
+		getDirFiles()
+	else:
 		getDirFiles()
 
 # Function called to change local, working directory
 def changeWorkingDir():
-    global mypath
-    value = str((mylist.get(mylist.curselection())))
-    print 'double', value
-    if value[0] == '>':
-        dirPath = os.path.join(mypath, value[4:])
+	global mypath
+	value = str((mylist.get(mylist.curselection())))
+	print 'double', value
+	if value == '..':
+		goUpDir()
+		
+	if value[0] == '>':
+		dirPath = os.path.join(mypath, value[4:])
         if os.path.isdir(dirPath):
             mypath = dirPath
             contents = os.listdir(mypath)
             populateListBox(contents)
-    localAdd = Label(window, text=mypath,bg='black',fg='white',width=60).grid(column=0,row=2,columnspan=2)
+	localAdd = Label(window, text=mypath,bg='black',fg='white',width=60).grid(column=0,row=2,columnspan=2)
 
 # Function called to get remote path
 def getRemPath():
@@ -592,7 +607,7 @@ def changeWorkingDirServ():
 			getRemPath()
 			print 'Directory changed'
 			getDirFiles()
-		logic.PWD()
+		#logic.PWD()
 		print 'changedir'
 
 # Frame with server files 
