@@ -41,7 +41,6 @@ window = Tix.Tk()
 window.title("FTP Application")
 window.resizable(0,0)
 
-
 # Finds last backslach and removes everything after
 # to get new directory
 def getCdup():
@@ -144,14 +143,17 @@ def dnlServButton():
 
 # Function to create directory on the server
 def mkdrServButton():
+	# global newDirName
+	global top
 	global isConnected
 	if isConnected == True:
-		print 'make dir: ' + servDir.get()
-		directoryName = servDir.get()
+		print newDirEntry.get()
+		directoryName = newDirEntry.get()
 		logic.MKD(directoryName)
 		getDirFiles()
 	else:
 		tkMessageBox.showinfo("New Directory Error", "Cannot make directory whilst disconnected.")
+	top.destroy()
 
 
 # Clear entry functions
@@ -360,6 +362,39 @@ def connectButton():
 			remotePath = reply[1]
 			serverAdd = Label(window, text=remotePath,bg='black',fg='white',width=60).grid(column=2,row=2,columnspan=3)
 
+
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~ TOPLEVEL POP-UPS ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+def dirDelete():
+	global top
+	top = Toplevel(width=1000,pady=10,padx=10)
+	top.title("Directory Deletion")
+
+	msg = Message(top, text="You are about to permanenly delete a directory and all of its contents. \n Do you wish to proceed?")
+	msg.pack()
+
+	cancelButton = Button(top, text="Cancel", command=top.destroy)
+	cancelButton.pack(side="right")
+	delButton = Button(top, text="Yes, Delete", command=delDir)
+	delButton.pack(side="right")
+
+def dirCreate():
+	global top
+	global newDirEntry
+	top = Toplevel(width=1000,pady=10,padx=10)
+	top.title("Create Directory")
+
+	msg = Message(top, text="New Directory Name:")
+	msg.pack()
+
+	newDirEntry = Entry(top)
+	newDirEntry.pack()
+	cancelButton = Button(top, text="Cancel", command=top.destroy)
+	cancelButton.pack(side="right")
+	delButton = Button(top, text="Create Directory", command=mkdrServButton)
+	delButton.pack(side="right")
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~ TKINTER WIDGET SETUP ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Username Entry
 entryFrame = Frame(window)
@@ -410,7 +445,7 @@ serverAdd = Label(window, text="",bg='black',fg='white',width=60).grid(column=2,
 serverBtnFrame = Frame(window)
 servDel = Button(serverBtnFrame,text="DEL",command=delServButton)
 servDnl = Button(serverBtnFrame,text="DWNL",command=dnlServButton)
-servMkdr = Button(serverBtnFrame,text="CREATE",command=mkdrServButton)
+servMkdr = Button(serverBtnFrame,text="NEW DIR",command=dirCreate)
 serverBtnFrame.grid(row=1,column=4,sticky="nsew", padx=10)
 servDel.pack(side="right")
 servDnl.pack(side="right")
@@ -439,22 +474,6 @@ terminalEntry.insert(0,">Enter custom command>>")
 terminalEntry.grid(row=5,column=0,columnspan=5)
 terminalEntry.bind('<Button-1>', termClear)
 terminalEntry.bind('<Return>',run)
-# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-# ~~~~~~~~~~~~~~~~~~~~~~~~~~ TOPLEVEL POP-UPS ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-def dirDelete():
-	global top
-	top = Toplevel(width=1000,pady=10,padx=10)
-	top.title("Directory Deletion")
-
-	msg = Message(top, text="You are about to permanenly delete a directory and all of its contents. \n Do you wish to proceed?")
-	msg.pack()
-
-	cancelButton = Button(top, text="Cancel", command=top.destroy)
-	cancelButton.pack(side="right")
-	delButton = Button(top, text="Yes, Delete", command=delDir)
-	delButton.pack(side="right")
-
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
