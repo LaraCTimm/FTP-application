@@ -253,7 +253,7 @@ An \texttt{AUTH} command was implemented after system testing with the standard 
 
 % I rate it'll be nice to talk about stuff from a button point of view. like what chain of events happenss when the things are initiated. I'll email you
 
-Client intro
+The client side of the application is run through a simple GUI, the details of which follow below.
 
 
 \subsubsection{Server Connection}
@@ -273,11 +273,11 @@ File creation functionality has not been implemented on neither the local nor re
 On selection of a file or directory, the client is able to press a 'DELETE' button on both the local and remote sides of the application. On the local side, the Python's \texttt{os} module's functionality is used to check if the selection is a file or directory. If a directory, a popup is shown informing the client that directories cannot be deleted. If a file, the \texttt{os} module is once again used to delete the selected file. On the remote side, the selection is once again checked to be a file or directory. If a directory, the folder name is passed to the \texttt{RMD} command in order to delete it or, if a file, the name is passed to the \texttt{DELE} command to do the same.
 
 \subsubsection{Client Experience}
-\subsubsection*{Custom Commands}
-\subsubsection*{System Responses}
+\subsubsection*{Custom Command Line}
+Included in the GUI is  a custom command line terminal. The terminal has an entry field for users to enter custom commands to the system in order for them not to be limited to the functionality that the GUI allows. In addition, the terminal window provided prints out any responses received by the server from both the custom commands and processes run through the GUI.
+
 \subsubsection*{GUI}
-
-
+The client side of the program is run with a GUI, as described above. This was developed using Python's TkInter module. The main function of the GUI is to view both local and remote file systems and working directories simultaneously. On the local side, this is done by using the \texttt{os} module's \texttt{getcwd()} and \texttt{listdir()} functions. On the remote side, \texttt{PWD} and \texttt{LIST} commands are sent to the server. The results are then displayed using TkInter \texttt{ListBox} widget and are selected and navigated through using click and double-click functions.
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -301,7 +301,7 @@ Interactions between the implemented FTP client and server are seamless. All imp
 
 In the test case, the client connects to the server and logs in. The client gets the directory listing and is able to navigate the file system. New directories can be created and deleted and files can be deleted. The data connection works in both passive and active mode (\texttt{PORT}) and both binary and ASCII files can be uploaded and downloaded.
  
-Figure~??REF?? shows the developed client GUI and depicts the local and remote file systems. 
+Figure~\ref{fig:ClientGUI} in Appendix \ref{sec:GUIAppendix} shows the developed client GUI and depicts the local and remote file systems. 
 
 \subsection{FTP Client interaction with standard FTP server}
 
@@ -334,12 +334,19 @@ Upon issuing a request for file download, FileZilla may request the size and mod
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{CODE STRUCTURE AND REQUIREMENTS}
 
-\subsubsection*{Code Structure: } The server code is contained within a single file, \textit{FTPserver.py}, and defines the two threading classes used to handle simultaneous client connections. All FTP functionality is implemented through methods defined in the \texttt{clientThread} class. The client implementation is divided into logical and interface components. The interface makes use of the \texttt{clientLogic} class to initiate and handle all interactions with the server.  %%% SASH %%%
+\subsubsection*{Code Structure: } The server code is contained within a single file, \textit{FTPserver.py}, and defines the two threading classes used to handle simultaneous client connections. All FTP functionality is implemented through methods defined in the \texttt{clientThread} class. The client implementation is divided into logical and interface components. The interface makes use of the \texttt{clientLogic} class to initiate and handle all interactions with the server and is contained within the \textit{interface.py} file.  %%% SASH %%%
 
 \subsubsection*{Requirements: }
-%%%% Sash %%%% whats needed to run code and how you compile and if you have to download andthing fot tkinter etc
+%%%% Sash %%%%
+The application has been developed to be run using Python 2.7. In order to run the GUI, the TkInter module needs to be installed.
 
-% python FTPserver.py to run server etc. Look at kayla's report
+In order to run the application, first the server has to be run using the following command from a command window in its containing folder:
+
+\texttt{python FTPserver.py}
+
+After which the client is run using the following command:
+
+\texttt{python interface.py}
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -478,7 +485,16 @@ Upon issuing a request for file download, FileZilla may request the size and mod
 \label{fig:WitsWS2}
 \end{figure}
 
+\newpage
 
+\section{Client Interface}\label{sec:GUIAppendix}
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.9\columnwidth]{interface.png}
+\caption{Screenshot of the client GUI}
+\raggedright
+\label{fig:ClientGUI}
+\end{figure}
 
 \end{appendix}
 
