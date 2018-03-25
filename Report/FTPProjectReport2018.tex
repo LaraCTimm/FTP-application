@@ -325,8 +325,7 @@ A summary of the successes and limitations of the file transfer application are 
 \subsection{Successes}
 
 The system can be considered a success as is it well implemented and fully functional. This is proven by the results obtained and presented in Section~\ref{results}. The system fulfils all requirements of a file transfer application. These include:
-
-\vspace*{-10mm}
+\vspace*{-4mm}
 \begin{itemize}
 	\item Both the client and server are able to meet the minimum requirements of FTP specified by RFC~959~\cite{rfc959}.
 	\item The client utilises a simple UI which allows the user to perform all required tasks.
@@ -342,43 +341,36 @@ The system can be considered a success as is it well implemented and fully funct
 Rather than making use of high-level FTP libraries, the implementation makes use of low-level sockets. The implementation of functionality beyond the scope of the minimum requirements is considered a success as it adds to the usability of the system. Additionally, the server implementation of more than five reply codes enables a greater understanding of the server status and actions taken.
 
 %% SASH %%% please finish this, I have to go get ready now.. 
-% good that GUI always knows status of server as after every interaction the list is refreshed
+Another success is the accuracy of the GUI's representation of the back-end file system. With each operation the view is updated in order to display the current list of files hosted in both local and remote repositories. As a result the client cannot attempt to perform operations on files which do not exist and are able to get visual feedback on new file and folder creation.
 
 \subsection{Limitations}
-% only file and stream
-% files are overwritten if they already exist
-
+Only the 'stream' data mode has been implemented. Unlike the 'compressed' and 'block' modes it is unreliable when determining the time at which a connection should be closed. Another limitation is that transfer of files and folders with duplicated names overwrite those pre-existing, possibly causing the loss of important data on both local and remote systems.
 
 \subsection{Future Improvements}
+The developed application does not integrate well with the chosen, standard FTP client. In future another client should be chosen, or the reasons they differ should be investigated in order to adapt methods and have a more seamless integration.
 
-% doesnt work well with standard ftp client chosen, maybe try another or investigate reason for problem and adapt
-% more ftp functionality
-% include security for transferring login details
+Security, such as hash encoding passwords or implementing SSL, could be provided for user login.
 
+Additionally, more FTP functionality could be implemented, such as features omitted as described in sections 2.1 ans 2.2.2.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{CODE STRUCTURE AND REQUIREMENTS}
 
-\subsubsection*{Code Structure: } The server code is contained within a single file, \textit{FTPserver.py}, and defines the two threading classes used to handle simultaneous client connections. All FTP functionality is implemented through methods defined in the \texttt{clientThread} class. The client implementation is divided into logical and interface components. The interface makes use of the \texttt{clientLogic} class to initiate and handle all interactions with the server and is contained within the \textit{interface.py} file.  %%% SASH %%%
+\subsubsection*{Code Structure: } The server code is contained within a single file, \textit{FTPserver.py}, and defines the two threading classes used to handle simultaneous client connections. All FTP functionality is implemented through methods defined in the \texttt{clientThread} class. The client implementation is divided into logical and interface components. The interface makes use of the \texttt{clientLogic} class to initiate and handle all interactions with the server and is contained within the \textit{interface.py} file.  
  
-
-%%% SASH %%%
-
 \subsubsection*{Requirements: }
 %%%% Sash %%%%
-The application has been developed to be run using Python 2.7. In order to run the GUI, the TkInter module needs to be installed.
-
-In order to run the application, first the server has to be run using the following command from a command window in its containing folder:
+The application has been developed to be run using Python 2.7. In order to run the GUI, the TkInter module needs to be installed. In order to run the application, first the server has to be run using the following command:
 
 \texttt{python FTPserver.py}
 
-After which the client is run using the following command:
+Following, the client is run using the following command:
 
 \texttt{python interface.py}
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{CONCLUSION}
-
+The development process of a File Transfer Protocol application, built in Python 2.7, has been described, as well as details on its implementation. The development was considered a success as it meets more than the minimum requirements laid out by the RFC~959 specification. In addition, correct protocols followed were confirmed through the use of Wireshark, and a GUI was implemented successfully displaying both local and remote file systems. In future security could be added to the login process and additional FTP functionality could be implemented.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %
