@@ -133,16 +133,15 @@ It is the responsibility of the client to handle errors that are not relevant to
 \subsubsection{Client Interface} $      $\label{GUI}
 
 %Sash%%%%%%%%%%%%%%%
-The FTP client is handled by a simple GUI containing entry fields for the client's credentials, windows displaying files hosted in local and remote directories, the two viewed directories' addresses, a terminal response window and a custom command entry field, as shown in [REF]. 
+The FTP client is handled by a simple GUI containing entry fields for the client's credentials, windows displaying files hosted in local and remote directories, the two viewed directories' addresses, a terminal response window and a custom command entry field, as shown in Figure \ref{fig:ClientGUI} in Appendix~\ref{sec:GUIAppendix}. 
 
-On start of the application the client is shown, and is able to navigate through, their local file system as well as delete files within it.
-With the correct input of their assigned username and password, as well as the address of the server to which they wish to connect, the client is logged in and is able to do the same with their remote directory. 
+%On start of the application the client is shown, and is able to navigate through, their local file system as well as delete files within it.
+%With the correct input of their assigned username and password, as well as the address of the server to which they wish to connect, the client is logged in and is able to do the same with their remote directory. 
 
-Once logged in, the client is able to select and upload files from their local system to the remote one, download files hosted by the server to their local system and is able to create new directories on the remote server.
+%Once logged in, the client is able to select and upload files from their local system to the remote one, download files hosted by the server to their local system and is able to create new directories on the remote server.
 
-Clients are able to delete files on both their local and remote systems. Directories can be deleted from the server but, as all containing files and folders are also removed, the client is first prompted by a pop-up warning in order to do so.
-
-The server's response to all actions described above are displayed in a terminal-like window. 
+%Clients are able to delete files on both their local and remote systems. Directories can be deleted from the server but, as all containing files and folders are also removed, the client is first prompted by a pop-up warning in order to do so.
+Once logged into the application the client can navigate through both their remote and local file systems, as well as delete and transfer files between them. The server's response to all actions described above are displayed in a terminal-like window. 
 
 The client is able to disconnect from the server through a 'DISCONNECT' button provided by the GUI. Alternatively, the closing of the developed application terminates the connection between the client and server.
 
@@ -533,7 +532,7 @@ After which the client is run using the following command:
 \label{fig:ClientGUI}
 \end{figure}
 
-\end{appendix}
+\end{appendix} 	
 
 %{\tiny \vfill \hfill \today \hspace{5mm} witseie-paper-2003.\TeX}
 
