@@ -12,7 +12,7 @@
 \usepackage{textcomp}
 \usepackage{listings}
 \usepackage{alltt}
-\usepackage{matlab-prettifier}
+%\usepackage{matlab-prettifier}
 \usepackage{graphicx}
 \usepackage{changes}
 \usepackage{makecell}
@@ -68,7 +68,7 @@
 
 \title{TITLE}
 
-\author{Sasha Berkiwitz (818737) \& Lara Timm (704157)
+\author{Sasha Berkowitz (818737) \& Lara Timm (704157)
 \thanks{School of Electrical \& Information Engineering, University of the
 Witwatersrand, Private Bag 3, 2050, Johannesburg, South Africa}
 }
@@ -132,31 +132,29 @@ It is the responsibility of the client to handle errors that are not relevant to
 \vspace*{-2mm}
 \subsubsection{Client Interface} $      $\label{GUI}
 
-test text
 %Sash%%%%%%%%%%%%%%%
-%The FTP client is handled by a simple GUI. 
+The FTP client is handled by a simple GUI containing entry fields for the client's credentials, windows displaying files hosted in local and remote directories, the two viewed directories' addresses, a terminal response window and a custom command entry field, as shown in [REF]. 
 
-%input params (name pass addr IP)
+On start of the application the client is shown, and is able to navigate through, their local file system as well as delete files within it.
+With the correct input of their assigned username and password, as well as the address of the server to which they wish to connect, the client is logged in and is able to do the same with their remote directory. 
 
-%can view and nav both file systems
+Once logged in, the client is able to select and upload files from their local system to the remote one, download files hosted by the server to their local system and is able to create new directories on the remote server.
 
-% can upload from local or dl from remote - file saved to current working dir
+Clients are able to delete files on both their local and remote systems. Directories can be deleted from the server but, as all containing files and folders are also removed, the client is first prompted by a pop-up warning in order to do so.
 
-%can delete files/folders (folder removes all contents) %%MAKE POPUP TO ASK IF SURE%??
-%can make folders local and remote?
+The server's response to all actions described above are displayed in a terminal-like window. 
 
-%client can input custom commands if necessary.
+The client is able to disconnect from the server through a 'DISCONNECT' button provided by the GUI. Alternatively, the closing of the developed application terminates the connection between the client and server.
 
-%client disconnects by?
+In addition to the functionality provided by the GUI, the client is able to enter custom commands through a provided entry field. 
+
 
 \vspace*{-\baselineskip}
 \subsubsection*{Unimplemented features: } 
 In accordance with the server implementation, the client has no implementation for file structures and transfer modes other than \textit{file} structure and \textit{stream} transfer mode.
 
 %Sash%%%%%%%%%%%%%%%
-%cannot make new files on either side, copy paste etc. 
-%cannot remane files/folders on either side
-%cannot edit files on either side
+The ability to create new files, whether through basic creation or 'copy and paste' functionality, has not been provided. This feature was deemed unnecessary as files are unable to be edited, therefore their creation would be futile. Through the application files cannot be renamed on either of the local or remote file systems. Finally, files cannot be transferred between directories on either systems, and directories cannot be uploaded nor downloaded.
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -257,6 +255,32 @@ The \texttt{AUTH} command was implemented after system testing with the standard
 %Sash%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 % I rate it'll be nice to talk about stuff from a button point of view. like what chain of events happenss when the things are initiated. I'll email you
+
+Client intro
+
+
+\subsubsection{Server Connection}
+\subsubsection*{Connection to Server}
+In order to connect to the server, the client provides their assigned username, password, the address of the server to which they wish to connect and the port on which it is running (if it is not the default port: 21). On press of the 'CONNECT' button, the login process is run. The client's entered username is sent to the server by making use of the \texttt{USER} command and its password with the \texttt{PASS} command. On the reception of a '230' response from the server, confirming that the supplied login credentials are correct, the client is logged in and is able to view and interact with their server-hosted file directory.
+ 
+\subsubsection*{Disconnection from Server} 
+The client is disconnected from the server on click of the 'DISCONNECT' button, causing the above described \texttt{QUIT} command to be run. Additionally, if the client fails to disconnect before closing the application window the \texttt{QUIT} command is run automatically.
+
+\subsubsection{File Management}
+\subsubsection*{File Transfer}
+Following the selection of a file, the user is able to either upload a file from their local system or download one from their remote repository. When doing so, on press of the corresponding 'UPL' or 'DWNL' buttons, a passive connection is created by making use of the \texttt{PASV} command. Following, the file type is confirmed by passing the file name to the \texttt{TYPE} command where its extension is searched for and the transfer type is changed between ASCII and Binary mode, depending on whether the file to be transferred is a text-based or media-based file.
+
+\subsubsection*{File \& Folder Creation \& Deletion}
+File creation functionality has not been implemented on neither the local nor remote side of the application. Directories, however, can be created on the remote side. On press of the 'NEW DIR' button, a pop-up window is displayed where the client can enter a desired directory name which is passed to the \texttt{MKDR} command. The directory is created and shown in the remote file system. 
+
+On selection of a file or directory, the client is able to press a 'DELETE' button on both the local and remote sides of the application. On the local side, the Python's \texttt{os} module's functionality is used to check if the selection is a file or directory. If a directory, a popup is shown informing the client that directories cannot be deleted. If a file, the \texttt{os} module is once again used to delete the selected file. On the remote side, the selection is once again checked to be a file or directory. If a directory, the folder name is passed to the \texttt{RMD} command in order to delete it or, if a file, the name is passed to the \texttt{DELE} command to do the same.
+
+\subsubsection{Client Experience}
+\subsubsection*{Custom Commands}
+\subsubsection*{System Responses}
+\subsubsection*{GUI}
+
+
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
