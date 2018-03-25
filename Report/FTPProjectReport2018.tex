@@ -143,7 +143,7 @@ The FTP client is handled by a simple GUI containing entry fields for the client
 %Clients are able to delete files on both their local and remote systems. Directories can be deleted from the server but, as all containing files and folders are also removed, the client is first prompted by a pop-up warning in order to do so.
 Once logged into the application the client can navigate through both their remote and local file systems, as well as delete and transfer files between them. The server's response to all actions described above are displayed in a terminal-like window. 
 
-The client is able to disconnect from the server through a 'DISCONNECT' button provided by the GUI. Alternatively, the closing of the developed application terminates the connection between the client and server.
+The client is able to disconnect from the server through the GUI. Alternatively, the closing of the developed application terminates the connection between the client and server.
 
 In addition to the functionality provided by the GUI, the client is able to enter custom commands through a provided entry field. 
 
@@ -255,31 +255,26 @@ The \texttt{AUTH} command was implemented after system testing with the standard
 
 % I rate it'll be nice to talk about stuff from a button point of view. like what chain of events happenss when the things are initiated. I'll email you
 
-The client side of the application is run through a simple GUI, the details of which follow below.
+The client side of the application is run with a simple GUI, developed using Python's TkInter module. The main function of the GUI is to view both local and remote file systems and working directories simultaneously. On the local side, this is done by using the \texttt{os} module's \texttt{getcwd()} and \texttt{listdir()} functions. On the remote side, \texttt{PWD} and \texttt{LIST} commands are sent to the server. The results are then displayed using TkInter \texttt{ListBox} widget and are selected and navigated through using click and double-click functions.
 
-
-\subsubsection{Server Connection}
-\subsubsection*{Connection to Server}
-In order to connect to the server, the client provides their assigned username, password, the address of the server to which they wish to connect and the port on which it is running (if it is not the default port: 21). On press of the 'CONNECT' button, the login process is run. The client's entered username is sent to the server by making use of the \texttt{USER} command and its password with the \texttt{PASS} command. On the reception of a '230' response from the server, confirming that the supplied login credentials are correct, the client is logged in and is able to view and interact with their server-hosted file directory.
+\subsubsection*{Connection To and Disconnection From The  Server}
+In order to connect to the server, the client provides their assigned username, password, the address of the server to which they wish to connect and the port on which it is running (if it is not the default port: 21). On press of the 'CONNECT' button, the login process is run through making use of the \texttt{USER} and \texttt{PASS} commands. On the reception of a '230' response from the server,the client is logged in and is able to view and interact with their server-hosted file directory.
  
-\subsubsection*{Disconnection from Server} 
 The client is disconnected from the server on click of the 'DISCONNECT' button, causing the above described \texttt{QUIT} command to be run. Additionally, if the client fails to disconnect before closing the application window the \texttt{QUIT} command is run automatically.
 
-\subsubsection{File Management}
 \subsubsection*{File Transfer}
-Following the selection of a file, the user is able to either upload a file from their local system or download one from their remote repository. When doing so, on press of the corresponding 'UPL' or 'DWNL' buttons, a passive connection is created by making use of the \texttt{PASV} command. Following, the file type is confirmed by passing the file name to the \texttt{TYPE} command where its extension is searched for and the transfer type is changed between ASCII and Binary mode, depending on whether the file to be transferred is a text-based or media-based file.
+Following the selection of a file, the user is able to either upload a file from their local system or download one from their remote repository. When doing so, on press of the corresponding 'UPL' or 'DWNL' buttons, a passive connection is created by making use of the \texttt{PASV} command. Following, the file type is confirmed by passing the file name to the \texttt{TYPE} command where the transfer type is changed between ASCII and Binary mode.
 
 \subsubsection*{File \& Folder Creation \& Deletion}
 File creation functionality has not been implemented on neither the local nor remote side of the application. Directories, however, can be created on the remote side. On press of the 'NEW DIR' button, a pop-up window is displayed where the client can enter a desired directory name which is passed to the \texttt{MKDR} command. The directory is created and shown in the remote file system. 
 
-On selection of a file or directory, the client is able to press a 'DELETE' button on both the local and remote sides of the application. On the local side, the Python's \texttt{os} module's functionality is used to check if the selection is a file or directory. If a directory, a popup is shown informing the client that directories cannot be deleted. If a file, the \texttt{os} module is once again used to delete the selected file. On the remote side, the selection is once again checked to be a file or directory. If a directory, the folder name is passed to the \texttt{RMD} command in order to delete it or, if a file, the name is passed to the \texttt{DELE} command to do the same.
+On selection of a file or directory, the client is able to press a 'DELETE' button on both the local and remote sides of the application. On the local side, the Python's \texttt{os} module's functionality is used to check if the selection is a file or directory. If a directory, a popup is shown, as can be seen in Figure~\ref{fig:ClientDel} in Appendix~\ref{sec:GUIAppendix}, informing the client that directories cannot be deleted. If a file, the \texttt{os} module is once again used to delete it. On the remote side, the selection is once again checked to be a file or directory before running either the \texttt{RMD} or \texttt{DELE} commands.
 
-\subsubsection{Client Experience}
 \subsubsection*{Custom Command Line}
 Included in the GUI is  a custom command line terminal. The terminal has an entry field for users to enter custom commands to the system in order for them not to be limited to the functionality that the GUI allows. In addition, the terminal window provided prints out any responses received by the server from both the custom commands and processes run through the GUI.
 
-\subsubsection*{GUI}
-The client side of the program is run with a GUI, as described above. This was developed using Python's TkInter module. The main function of the GUI is to view both local and remote file systems and working directories simultaneously. On the local side, this is done by using the \texttt{os} module's \texttt{getcwd()} and \texttt{listdir()} functions. On the remote side, \texttt{PWD} and \texttt{LIST} commands are sent to the server. The results are then displayed using TkInter \texttt{ListBox} widget and are selected and navigated through using click and double-click functions.
+%\subsubsection*{GUI}
+%The client side of the program is run with a GUI, as described above. This was developed using Python's TkInter module. The main function of the GUI is to view both local and remote file systems and working directories simultaneously. On the local side, this is done by using the \texttt{os} module's \texttt{getcwd()} and \texttt{listdir()} functions. On the remote side, \texttt{PWD} and \texttt{LIST} commands are sent to the server. The results are then displayed using TkInter \texttt{ListBox} widget and are selected and navigated through using click and double-click functions.
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -526,10 +521,18 @@ After which the client is run using the following command:
 \section{Client Interface}\label{sec:GUIAppendix}
 \begin{figure}[h]
 \centering
-\includegraphics[width=0.9\columnwidth]{interface.png}
-\caption{Screenshot of the client GUI}
+\includegraphics[width=0.8\columnwidth]{interface.png}
+\caption{Screenshot of the client GUI once a user has logged in}
 \raggedright
 \label{fig:ClientGUI}
+\end{figure}
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.8\columnwidth]{delDir.png}
+\caption{Screenshot of the client GUI after an attempt to delete a directory}
+\raggedright
+\label{fig:ClientDel}
 \end{figure}
 
 \end{appendix} 	
