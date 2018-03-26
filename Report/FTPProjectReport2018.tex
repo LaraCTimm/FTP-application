@@ -89,11 +89,11 @@ Witwatersrand, Private Bag 3, 2050, Johannesburg, South Africa}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{INTRODUCTION}
 
-File Transfer Protocol (FTP) is a protocol used  to transfer files between two hosts over a TCP or IP network~\cite{FTPbeginners}. In it's operation FTP makes use of two TCP connections, a control connection and a data connection. The control connection, used to send control information, is opened and remains open throughout the duration of the user session~\cite{topDownApproach6th}. The data connection is non-persistent; a new data connection is established for each new file transfer~\cite{topDownApproach6th}. The main objectives of FTP include the promotion of file sharing, to encourage the use of remote computers, to shield users from variations in file storage systems among hosts and to ensure reliable and efficient data transfer~\cite{rfc959}. 
+File Transfer Protocol (FTP) is a protocol used  to transfer files between two hosts over a TCP or IP network~\cite{FTPbeginners}. In its operation FTP makes use of two TCP connections, a control connection and a data connection. The control connection, used to send control information, is opened and remains open throughout the duration of the user session~\cite{topDownApproach6th}. The data connection is non-persistent; a new data connection is established for each new file transfer~\cite{topDownApproach6th}. The main objectives of FTP include the promotion of file sharing, to encourage the use of remote computers, to shield users from variations in file storage systems among hosts and to ensure reliable and efficient data transfer~\cite{rfc959}. 
 
 %Using the python programming language as well as basic socket methods, a File Transfer Application is designed and tested. Additionally, a basic FTP User Interface (UI) is developed to interact with the remote FTP server in an intuitive way.
 
-Detailed within the sections below are a overview of the implemented system and its command/reply messaging exchange, a working description of the system and code base, the results of system testing and a critical analysis thereof. Also included is the division of work between the project partners.
+%Detailed within the sections below are a overview of the implemented system and its command/reply messaging exchange, a working description of the system and code base, the results of system testing and a critical analysis thereof. Also included is the division of work between the project partners.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{SYSTEM DESCRIPTION} 
@@ -102,19 +102,19 @@ An FTP client and server pair has been designed and implemented as per RFC~959 s
 
 \subsection{FTP Server}
 
-The FTP server is hosted locally, and can be accessed by an FTP client which is either connecting from the hosts computer, or from a computer running on the same Local Area Network (LAN) via the server's IP address. 
+The FTP server is hosted locally, and can be accessed by an FTP client connecting from either the hosts computer, or from a computer running on the same network. 
 
-To provide unique user experience, the server maintains a user repository, within the servers local file system, for each registered client. To gain access to their remote repository, the user must be successfully authenticated using their unique username and password. Clients trying to connect without a registered username and password are not permitted to access the server file system.
+The server maintains a user repository for each registered client. To gain access to their remote repository, the user must be successfully authenticated using their unique username and password. Clients trying to connect without a registered username and password are not permitted to access the server file system.
 
-The server is implemented in accordance with the RFC~959 specification. The implemented features of the system go beyond those of the minimum requirements set out by the standard, improving the system's general functionality and usability. 
+%The server is implemented in accordance with the RFC~959 specification. The implemented features of the system go beyond those of the minimum requirements set out by the standard, improving the system's general functionality and usability. 
 
-To allow for more than one client to be connected to the server at a time, the server program is multithreaded. Each new client connection is handled by a separate thread, and up to five simultaneous connections can be established by FTP clients. 
+To allow for simultaneous client connections, the server program is multithreaded. Each new connection is handled by a separate thread, and up to five simultaneous connections are allowed. 
 
-To communicate file, system and transfer status to the client, the server makes use of a number of RFC~959 specified reply codes. These codes enable the client to detect errors and react accordingly. Further discussion of the FTP command and replies can be found in Section~\ref{sec:command/reply}
+To communicate file, system and transfer status to the client, the server makes use of RFC~959 specified reply codes. These codes enable the client to detect errors and react accordingly. Further discussion of the FTP command and replies can be found in Section~\ref{sec:command/reply}
 
 \vspace*{-2mm}
 \subsubsection*{Unimplemented features: }
-In accordance with the RFC~959 minimum requirements, the default file structure and transfer mode for exchange should be implemented. Functionality for \textit{record} and \textit{page} structures, as well as for \textit{block} and \textit{compressed} transfer modes were not implemented. The project group deemed theses features unnecessary as file transfer is still possible in their absence.
+In accordance with the RFC~959 minimum requirements, functionality for \textit{record} and \textit{page} file structures, as well as for \textit{block} and \textit{compressed} transfer modes were not implemented. The project group deemed theses features unnecessary as file transfer is still possible in their absence.
 
 \subsection{FTP Client}
 
@@ -123,9 +123,9 @@ The FTP client is composed of two working parts, a Graphical User Interface (GUI
 \vspace*{-2mm}
 \subsubsection{Client Logic} $     $
 
-The FTP client is hosted locally and can connect to a server hosted either locally (on the client's computer) or over a LAN connection. To connect to the server, the client must know the IP address and port on which the server is listening for a TCP connection.
+The FTP client is hosted locally and can connect to a server hosted either on the client's computer or over a LAN connection. To connect to the server, the client must know the IP address and port on which the server is listening for a TCP connection.
 
-The responsibility of the logical FTP client is to interact with the server in accordance with FTP standards. The client translates raw data received from the GUI and formats it to comply with the RFC~959 specification. In this way, the client can not only interact with the designed server, but also  with a range of standard FTP servers.
+The responsibility of the FTP client is to interact with the server in accordance with FTP standards. The client translates raw data received from the GUI and formats it to comply with the RFC~959 specification. In this way, the client can not only interact with the designed server, but also  with a range of standard FTP servers.
 
 It is the responsibility of the client to handle errors that are not relevant to the server. Such errors include trying to upload a file that does not exist in the clients file system and handling errors to do with incorrect formatting of client commands.
 
@@ -133,7 +133,8 @@ It is the responsibility of the client to handle errors that are not relevant to
 \subsubsection{Client Interface} $      $\label{GUI}
 
 %Sash%%%%%%%%%%%%%%%
-The FTP client is handled by a simple GUI containing entry fields for the client's credentials, windows displaying files hosted in local and remote directories, the two viewed directories' addresses, a terminal response window and a custom command entry field, as shown in Figure \ref{fig:ClientGUI} in Appendix~\ref{sec:GUIAppendix}. 
+The FTP client is handled by a simple GUI containing entry fields for the client's credentials, windows displaying files hosted in local and remote directories, % the two viewed directories' addresses, 
+a terminal response window and a custom command entry field, as shown in Figure \ref{fig:ClientGUI} in the Appendix.
 
 %On start of the application the client is shown, and is able to navigate through, their local file system as well as delete files within it.
 %With the correct input of their assigned username and password, as well as the address of the server to which they wish to connect, the client is logged in and is able to do the same with their remote directory. 
@@ -141,11 +142,11 @@ The FTP client is handled by a simple GUI containing entry fields for the client
 %Once logged in, the client is able to select and upload files from their local system to the remote one, download files hosted by the server to their local system and is able to create new directories on the remote server.
 
 %Clients are able to delete files on both their local and remote systems. Directories can be deleted from the server but, as all containing files and folders are also removed, the client is first prompted by a pop-up warning in order to do so.
-Once logged into the application the client can navigate through both their remote and local file systems, as well as delete and transfer files between them. The server's response to all actions described above are displayed in a terminal-like window. 
+Once logged in, the user can navigate through both their remote and local file systems, as well as delete and transfer files between them. The server's response is displayed in a terminal-like window. 
 
-The client is able to disconnect from the server through the GUI. Alternatively, the closing of the developed application terminates the connection between the client and server.
+The client is able to disconnect from the server through the GUI. Alternatively, closing the developed application terminates the client/server connection.
 
-In addition to the functionality provided by the GUI, the client is able to enter custom commands through a provided entry field. 
+In addition to the functionality provided by the GUI, the client is able to enter custom FTP commands through the provided entry field. 
 
 
 \vspace*{-\baselineskip}
@@ -153,41 +154,39 @@ In addition to the functionality provided by the GUI, the client is able to ente
 In accordance with the server implementation, the client has no implementation for file structures and transfer modes other than \textit{file} structure and \textit{stream} transfer mode.
 
 %Sash%%%%%%%%%%%%%%%
-The ability to create new files, whether through basic creation or 'copy and paste' functionality, has not been provided. This feature was deemed unnecessary as files are unable to be edited, therefore their creation would be futile. Through the application files cannot be renamed on either of the local or remote file systems. Finally, files cannot be transferred between directories on either systems, and directories cannot be uploaded nor downloaded.
+Functionality to create new files, rename files either locally or remotely and transfer files between directories on either system is not implemented. Additionally, directories cannot be uploaded or downloaded.
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{FTP COMMAND/REPLY OVERVIEW}\label{sec:command/reply}
 
-The format of FTP reply messages are designed to ensure that requests and actions are well synchronized, and that the client is informed about the status of the server at all times~\cite{rfc959}. 
+The format of FTP reply messages is designed to ensure that requests and actions are well synchronized, and that the client is informed about the status of the server at all times~\cite{rfc959}. 
 
-FTP commands are sent via a TCP control connection, established on port 21 of the server~\cite{topDownApproach6th}. FTP dictates that a standard command and reply format must be followed for all communications on this connection, in accordance with RFC~959~\cite{rfc959}. The command and reply formats are demonstrated below, where \texttt{$<$SP$>$} indicates a space and \texttt{$<$CRLF$>$} indicates the end of line sequence '\textbackslash r\textbackslash n'.
+FTP commands are sent via the persistent TCP control connection, established on port 21 of the server~\cite{topDownApproach6th}. FTP dictates that a standard command and reply format must be followed for all communications on this connection~\cite{rfc959}. The command and reply formats are demonstrated below, where \texttt{$<$SP$>$} indicates a space and \texttt{$<$CRLF$>$} indicates the end of line sequence, '\textbackslash r\textbackslash n'.
 
 \begin{tabular}{ll}
 	Command:& \texttt{$<$CMD$>$$<$SP$>$$<$argument$>$$<$CRLF$>$} \\[5pt]
 	Reply:& \texttt{$<$code$>$$<$description$>$$<$CRLF$>$} \\[5pt]
 \end{tabular} 
 
-There are 5 categories of FTP replies, characterised by the first digit of the three digit reply code~\cite{rfc959}. 
+There are 5 categories of FTP replies, characterised by the first digit of the three digit reply code~\cite{rfc959}. In the developed file transfer application, at least one reply was implemented from each category. A description of the categories as well as list of the implemented commands and their associated server responses are detailed in Appendix~\ref{sec:comm-replyTable}.
 
-The categories are: 
+%~~\texttt{1**~	Positive Preliminary reply}
+%%Requested action initiated, expect reply before sending new command.
+%
+%~~\texttt{2**~	Positive Completion reply}
+%%Requested action completed, new command can be sent.
+%
+%~~\texttt{3**~ Positive Intermediate reply}
+%%Command received, server waiting for further information.
+%
+%~~\texttt{4**~ Transient Negative Completion reply}
+%%Command not accepted, action did not take place. Error is temporary and action may be requested again.
+%
+%~~\texttt{5**~ Permanent Negative Completion reply}
+%%Command not accepted, action did not take place. User discouraged from repeating same request.}
 
-\textbf{1**	Positive Preliminary reply:} 
-Requested action initiated, expect reply before sending new command.
 
-\textbf{2**	Positive Completion reply:} 
-Requested action completed, new command can be sent.
-
-\textbf{3**   Positive Intermediate reply:} 
-Command received, server waiting for further information.
-
-\textbf{4**   Transient Negative Completion reply:} 
-Command not accepted, action did not take place. Error is temporary and action may be requested again.
-
-\textbf{5**   Permanent Negative Completion reply:} 
-Command not accepted, action did not take place. User discouraged from repeating same request.
-
-In the designed file transfer application, at least one reply was implemented from each category. A list of the implemented commands and their associated server responses are detailed in Appendix~\ref{sec:comm-replyTable}.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{DETAILED FEATURE IMPLEMENTATION} % talk about details of how the complex functions work
@@ -199,13 +198,13 @@ Both the client and the server are implemented using Python 2.7. Essential Pytho
 
  The server program is multi-threaded, making use of Python's \texttt{threading} module, to allow for simultaneous client connections. When the server code is executed, a \texttt{serverThread} object is created which listens for and accepts new client connections. When a connection is made, a \texttt{clientThread} object is created and assigned to a new thread. The thread is passed the client's connection socket and the address bound to that socket as argument~\cite{socketModule}.
  
- Within each \texttt{clientThread} object, the server continuously accepts commands from the client (using \texttt{recv()}), performs the desired action and returns a reply (using \texttt{send()}). Based on the server reply, the client is able to determine the success/failure of the command as well determine changes in transfer parameters and determine the status of the server. The implemented FTP commands are described in the remainder of this section.
+ Within each \texttt{clientThread} object, the server continuously accepts commands (using \texttt{recv()}), performs the desired action and returns a reply (using \texttt{send()}). Based on the reply, the client is able to determine the success/failure of the command as well determine changes in transfer parameters and the status of the server.
  
 \vspace*{-2mm}
 \subsubsection{Access Control Commands} $   $
 
 \subsubsection*{Authentication:} \vspace*{-\baselineskip}
-Once connected, a client must be authenticated. The \texttt{USER} and \texttt{PASS} commands are expected with plaintext username and password arguments. For a successful authentication, the username and password must match those contained in the file \textit{userdata.txt}. The server maintains a repository for each registered user on its file system. In the case that a repository does not already exist for a registered user, one is created upon successful authentication.
+Once connected, a client must be authenticated. The \texttt{USER} and \texttt{PASS} commands are expected with plaintext arguments. For a successful authentication, the username and password must match those contained in the file \textit{userdata.txt}. In the case that a user repository does not already exist, one is created upon successful authentication.
 
 \vspace*{-2mm}
 \subsubsection*{Navigation:}
@@ -223,7 +222,7 @@ All parameters controlling data transfer have default values, the following comm
 
 \vspace*{-2mm}
 \subsubsection*{Transfer Mode:} 
-As per the minimum requirements specified by RFC~959, only the default transfer structure and transfer mode are implemented. \texttt{STRU} allows the transfer structure to be set to file [\texttt{F}] and \texttt{MODE} allows the transfer mode to be set to stream [\texttt{S}]. To cover a large range of file formats, both ASCII (text files) and Binary (media) representation types are implemented. The client determines the argument of the TYPE command as either ASCII [\texttt{A}] or binary [\texttt{I}] depending on the extension if the file to be transferred.
+As per the minimum requirements specified by RFC~959, only the default transfer structure and transfer mode are implemented. \texttt{STRU} allows the transfer structure to be set to file [\texttt{F}] and \texttt{MODE} allows the transfer mode to be set to stream [\texttt{S}]. To cover a large range of file formats, both ASCII (text files) and Binary (media) representation types are implemented. The client determines the argument of the \texttt{TYPE} command as either ASCII [\texttt{A}] or binary [\texttt{I}] depending on the extension if the file to be transferred.
 
 \vspace*{-2mm}
 \subsubsection{Service Commands} $    $
@@ -242,12 +241,11 @@ The \texttt{PWD} and \texttt{LIST} commands allow the client to know the status 
 
 \vspace*{-2mm}
 \subsubsection*{File System Action: }
-The \texttt{MKD}, \texttt{RMD} and \texttt{DELE} commands enable the client to make and delete a directory as well as delete a file on the server file system. All three functions take a file name, directory name or path as argument. IF a directory is deleted, the entire contents of the directory is removed.
+The \texttt{MKD}, \texttt{RMD} and \texttt{DELE} commands enable the client to make and delete a directory as well as delete a file on the server file system. All three functions take a file name, directory name or path as argument. If a directory is deleted, the entire contents of the directory is removed.
 
 The \texttt{NOOP} command fulfils no purpose other than to solicit an OK response from the server.
 
 The \texttt{AUTH} command was implemented after system testing with the standard FTP client, FileZilla. \texttt{AUTH} requests expect authentication details to be encrypted before transmission. In the implementation, \texttt{AUTH} simply responds with a message requesting log in with \texttt{USER} and \texttt{PASS}.
-
 
 \subsection{Client}
 
@@ -255,23 +253,27 @@ The \texttt{AUTH} command was implemented after system testing with the standard
 
 % I rate it'll be nice to talk about stuff from a button point of view. like what chain of events happenss when the things are initiated. I'll email you
 
-The client side of the application is run with a simple GUI, developed using Python's TkInter module. The main function of the GUI is to view both local and remote file systems and working directories simultaneously. On the local side, this is done by using the \texttt{os} module's \texttt{getcwd()} and \texttt{listdir()} functions. On the remote side, \texttt{PWD} and \texttt{LIST} commands are sent to the server. The results are then displayed using TkInter \texttt{ListBox} widget and are selected and navigated through using click and double-click functions.
+The client side of the application is run with a simple GUI, developed using Python's \texttt{TkInter} module. The main function of the GUI is to view both local and remote file systems and working directories simultaneously. On the local side, this is done by using the \texttt{os} module's \texttt{getcwd()} and \texttt{listdir()} functions. On the remote side, \texttt{PWD} and \texttt{LIST} commands are sent to the server. The results are then displayed using TkInter \texttt{ListBox} widget and are selected and navigated through using click and double-click functions.
 
-\subsubsection*{Connection To and Disconnection From The  Server}
-In order to connect to the server, the client provides their assigned username, password, the address of the server to which they wish to connect and the port on which it is running (if it is not the default port: 21). On press of the 'CONNECT' button, the login process is run through making use of the \texttt{USER} and \texttt{PASS} commands. On the reception of a '230' response from the server,the client is logged in and is able to view and interact with their server-hosted file directory.
+\vspace*{-2mm}
+\subsubsection*{Connection To and Disconnection From The Server: }
+To connect to the server, the client provides their username and password, the server address and the server port. Upon press of the 'CONNECT' button, the login process is initiated using the \texttt{USER} and \texttt{PASS} commands. Upon successful log-in, the user is able to view and interact with their server-hosted file directory.
  
-The client is disconnected from the server on click of the 'DISCONNECT' button, causing the above described \texttt{QUIT} command to be run. Additionally, if the client fails to disconnect before closing the application window the \texttt{QUIT} command is run automatically.
+The client is disconnected from the server upon click of the 'DISCONNECT' button, using the \texttt{QUIT} command. If the client closes the application window without disconnecting, the \texttt{QUIT} command is run automatically.
 
-\subsubsection*{File Transfer}
-Following the selection of a file, the user is able to either upload a file from their local system or download one from their remote repository. When doing so, on press of the corresponding 'UPL' or 'DWNL' buttons, a passive connection is created by making use of the \texttt{PASV} command. Following, the file type is confirmed by passing the file name to the \texttt{TYPE} command where the transfer type is changed between ASCII and Binary mode.
+\vspace*{-2mm}
+\subsubsection*{File Transfer: }
+The user is able to upload a file from their local system or download one from their remote repository on press of the 'UPL' or 'DWNL' buttons respectively. A passive connection is requested using the \texttt{PASV} command and the file type is confirmed by passing the file name to the \texttt{TYPE} command.
 
-\subsubsection*{File \& Folder Creation \& Deletion}
-File creation functionality has not been implemented on neither the local nor remote side of the application. Directories, however, can be created on the remote side. On press of the 'NEW DIR' button, a pop-up window is displayed where the client can enter a desired directory name which is passed to the \texttt{MKDR} command. The directory is created and shown in the remote file system. 
+\vspace*{-2mm}
+\subsubsection*{File \& Folder Creation \& Deletion: }
+Files cannot be created locally or remotely. Directories can be created remotely by pressing the 'NEW DIR' button. A pop-up window is displayed where the user can enter a desired directory name, which is passed to the \texttt{MKDR} command. The directory is created and shown in the remote file system. 
 
-On selection of a file or directory, the client is able to press a 'DELETE' button on both the local and remote sides of the application. On the local side, the Python's \texttt{os} module's functionality is used to check if the selection is a file or directory. If a directory, a popup is shown, as can be seen in Figure~\ref{fig:ClientDel} in Appendix~\ref{sec:GUIAppendix}, informing the client that directories cannot be deleted. If a file, the \texttt{os} module is once again used to delete it. On the remote side, the selection is once again checked to be a file or directory before running either the \texttt{RMD} or \texttt{DELE} commands.
+The user can delete local and remote files using the 'DELETE' button. Locally, the \texttt{os} module is used to determine if the selection is a file or directory. If it is a directory, a popup informs the user that directories cannot be deleted (refer to Figure~\ref{fig:ClientDel}). If it is a file, the \texttt{os} module is used to delete it. Remotely, the selection is once again checked to be a file or directory before running either the \texttt{RMD} or \texttt{DELE} commands.
 
-\subsubsection*{Custom Command Line}
-Included in the GUI is  a custom command line terminal. The terminal has an entry field for users to enter custom commands to the system in order for them not to be limited to the functionality that the GUI allows. In addition, the terminal window provided prints out any responses received by the server from both the custom commands and processes run through the GUI.
+\vspace*{-2mm}
+\subsubsection*{Custom Command Line: }
+Included in the GUI is a 'custom command' entry field, to allow users to enter custom FTP commands. In this way, users are not limited by the functionality that the GUI allows. In addition, the terminal window provided prints out responses received by the server from both the custom commands and processes run through the GUI.
 
 %\subsubsection*{GUI}
 %The client side of the program is run with a GUI, as described above. This was developed using Python's TkInter module. The main function of the GUI is to view both local and remote file systems and working directories simultaneously. On the local side, this is done by using the \texttt{os} module's \texttt{getcwd()} and \texttt{listdir()} functions. On the remote side, \texttt{PWD} and \texttt{LIST} commands are sent to the server. The results are then displayed using TkInter \texttt{ListBox} widget and are selected and navigated through using click and double-click functions.
@@ -283,9 +285,9 @@ Included in the GUI is  a custom command line terminal. The terminal has an entr
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{RESULTS}\label{results}
 
-To test the system fully, testing of all functionally on the client and server side is required. This must therefore include testing the FTP client and server with one another as will as with standard FTP clients and servers.
+All functionally on the client and server side is must be tested. This includes testing the FTP client and server with one another as will as with standard FTP clients and servers.
 
-Functionality testing begins with connecting and performing client authentication. The client can then navigate around their remote file repository. To upload or download files, the file type is set, a data connection is established and the file is transmitted or received. The client can create directories, as well as delete them. Files cannot be created, only deleted.
+%Functionality testing begins with connecting and performing client authentication. The client can then navigate around their remote file repository. To upload or download files, the file type is set, a data connection is established and the file is transmitted or received. The client can create directories, as well as delete them. Files cannot be created, only deleted.
 
 Wireshark is used to test the developed file transfer application. Appendix~\ref{sec:wireshark} contains screenshots of the described interactions. 
 
@@ -293,9 +295,9 @@ Wireshark is used to test the developed file transfer application. Appendix~\ref
 
 Interactions between the implemented FTP client and server are seamless. All implemented functionality works as expected.
 
-In the test case, the client connects to the server and logs in. The client gets the directory listing and is able to navigate the file system. New directories can be created and deleted and files can be deleted. The data connection works in both passive and active mode (\texttt{PORT}) and both binary and ASCII files can be uploaded and downloaded.
+The client connects to the server and logs in. The client receives the directory listing and is able to navigate the file system. New directories can be created and deleted and files can be deleted. The data connection works in both passive and active mode (\texttt{PORT}) and both binary and ASCII files can be uploaded and downloaded. For screenshots depicting this interaction refer to Figures~\ref{fig:ourWS1} and \ref{fig:ourWS2}.
  
-Figure~\ref{fig:ClientGUI} in Appendix \ref{sec:GUIAppendix} shows the developed client GUI and depicts the local and remote file systems. 
+%Figure~\ref{fig:ClientGUI} in the Appendix shows the developed client GUI and depicts the local and remote file systems. 
 
 \subsection{FTP Client interaction with standard FTP server}
 
@@ -303,58 +305,52 @@ Similar to that of the FTP client/FTP server interaction, interfacing with the s
 
 Figure~\ref{fig:WitsWS1} depicts client authentication, directory listing and navigation, the initiation of a passive data connection, binary file download and file deletion. 
 
-Figure~\ref{fig:WitsWS1} depicts the creation and deletion of directories, ASCII file upload, printing and navigating up a directory, the initiation of an active data connection, the request of an OK response and closing the control connection.
-
-It was noted that the client is aware of only their own base directory and cannot navigate higher in the directory tree. This feature ensures that the client cannot make changes to files they are not permitted to edit.
+Figure~\ref{fig:WitsWS2} depicts the creation and deletion of directories, ASCII file upload, printing and navigating up a directory, the initiation of an active data connection, the request of an OK response and closing the control connection.
+%It was noted that the client is aware of only their own base directory and cannot navigate higher in the directory tree. This feature ensures that the client cannot make changes to files they are not permitted to edit.
 
 \subsection{Standard FTP Client interaction with FTP server}
 
-Compared to the interaction with that standard FTP server, the chosen standard FTP client is far less compatible with the implemented server. Basic FTP commands are successful. FileZilla is able to authenticate the user, open data connections and upload and download files without difficulty. Commands beyond the minimum implementation scope result in confusing results.
+Compared to the interaction with the standard FTP server, the chosen standard FTP client is far less compatible with the implemented server. Basic FTP commands are successful. FileZilla is able to authenticate the user, open data connections and upload and download files without difficulty. Commands beyond the minimum implementation scope result in confusing results.
 
-Unlike the implemented FTP client, FileZilla requests that the client provide a TLS or SSL authentication for secure data transfer. FileZilla does not always make use of the \texttt{CDUP} command to go up one directory. Rather a \texttt{CWD} command with the path of the working directory as argument is used. 
+Unlike the implemented FTP client, FileZilla requests that the client provide a TLS or SSL authentication for secure data transfer. FileZilla does not always make use of the \texttt{CDUP} command to go up one directory. Rather a \texttt{CWD} command with the path of the working directory as argument is used. Upon issuing a request for file download, FileZilla may request the size and modification time of the file using \texttt{SIZE} and \texttt{MDTM} requests. Although the server does not have implementation for these commands, files transfer is still successful.
 
 FileZilla appears to store a history of the previous directory listing, so performing a change directory up request does not cause FileZilla to send a change directory command or request a new directory listing. As a result the working directory of the server is not updated and errors arise. All the problems associated with directory traversal may be due to FileZilla expecting a directory list in a different form than the one which the server provides. The command \texttt{LIST~-a} may expect a different format than the one provided, yet is not further investigated.
 
-Upon issuing a request for file download, FileZilla may request the size and modification time of the file using \texttt{SIZE} and \texttt{MDTM} requests. Although the server does not have implementation for these commands, files transfer is still successful.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{CRITICAL ANALYSIS}
 
-A summary of the successes and limitations of the file transfer application are presented below.
-
 \subsection{Successes}
 
 The system can be considered a success as is it well implemented and fully functional. This is proven by the results obtained and presented in Section~\ref{results}. The system fulfils all requirements of a file transfer application. These include:
-<<<<<<< HEAD
 
 \vspace*{-2mm}
 
 \begin{itemize}
-	\item Both the client and server are able to meet the minimum requirements of FTP specified by RFC~959~\cite{rfc959}.
+	\item Both the client and server meet the minimum requirements of FTP specified by RFC~959~\cite{rfc959}.
 	\item The client utilises a simple UI which allows the user to perform all required tasks.
 	\item The server is multi-threaded as to allow simultaneous client connections and file transfers.
 	\item The server maintains repositories for all registered users.
 	\item Both the client and server are able to interact with standard FTP clients and servers and perform all tasks required for file transfer.
 	\item The file transfer application is able to transfer files of varying file types.
-	\item The file transfer application allows client and server communication when the client and server are hosted on the same computer as well as when hosted on different computers on the same network.
-	\item Wireshark can be used to monitor FTP messages between the client and server. 
+	\item The file transfer application allows client and server communications when hosted on the same computer as well as hosted on different computers on the same network.
 \end{itemize} 
 \vspace*{-2mm}
 
-Rather than making use of high-level FTP libraries, the implementation makes use of low-level sockets. The implementation of functionality beyond the scope of the minimum requirements is considered a success as it adds to the usability of the system. Additionally, the server implementation of more than five reply codes enables a greater understanding of the server status and actions taken.
+Rather than making use of high-level FTP libraries, the implementation makes use of low-level sockets. Providing functionality beyond the scope of the minimum requirements is considered a success as it adds to the usability of the system. Additionally, the server implementation of more than five reply codes enables a greater understanding of the server status and actions taken.
 
 %% SASH %%% please finish this, I have to go get ready now.. 
-Another success is the accuracy of the GUI's representation of the back-end file system. With each operation the view is updated in order to display the current list of files hosted in both local and remote repositories. As a result the client cannot attempt to perform operations on files which do not exist and are able to get visual feedback on new file and folder creation.
+Another success is the accuracy of the GUI's representation of the back-end file system. With each operation the view is refreshed in order to display the current list of files hosted in both local and remote repositories. As a result the client cannot attempt to perform operations on files which do not exist and are able to get visual feedback on new file and folder creation.
 
 \subsection{Limitations}
 Only the 'stream' data mode has been implemented. Unlike the 'compressed' and 'block' modes it is unreliable when determining the time at which a connection should be closed. Another limitation is that transfer of files and folders with duplicated names overwrite those pre-existing, possibly causing the loss of important data on both local and remote systems.
 
 \subsection{Future Improvements}
-The developed application does not integrate well with the chosen, standard FTP client. In future another client should be chosen, or the reasons they differ should be investigated in order to adapt methods and have a more seamless integration.
+The developed application does not integrate well with the chosen standard FTP client. In future a different client should be considered, or the reasons they differ should be investigated in order to adapt methods and have a more seamless integration.
 
 Security, such as hash encoding passwords or implementing SSL, could be provided for user login.
 
-Additionally, more FTP functionality could be implemented, such as features omitted as described in sections 2.1 ans 2.2.2.
+Additionally, more FTP functionality could be implemented, such as features omitted as described in sections 2.1 and 2.2.2.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{CODE STRUCTURE AND REQUIREMENTS}
 
@@ -362,11 +358,11 @@ Additionally, more FTP functionality could be implemented, such as features omit
  
 \subsubsection*{Requirements: }
 %%%% Sash %%%%
-The application has been developed to be run using Python 2.7. In order to run the GUI, the TkInter module needs to be installed. In order to run the application, first the server has to be run using the following command:
+The application has been developed to be run using Python 2.7. In order to run the GUI, the \texttt{TkInter} module needs to be installed. In order to run the application, first the server has to be run using the following command:
 
 \texttt{python FTPserver.py}
 
-Following, the client is run using the following command:
+Following, the client is run using the following command.
 
 \texttt{python interface.py}
 
@@ -388,10 +384,29 @@ The development process of a File Transfer Protocol application, built in Python
 \begin{appendix}
 	
 \setcounter{figure}{0} \renewcommand{\thefigure}{A\arabic{figure}}
+%\setcounter{figure}{0} \renewcommand{\thetable}{\Alph{section}\arabic{figure}}
 	
 \section{Implemented FTP Commands/Replies} \label{sec:comm-replyTable}
+\setcounter{table}{0} \renewcommand{\thefigure}{A\arabic{table}}
+
+The five categories of FTP replies and their explanations are presented below:
+
+\begin{tabular}{ll}
+	1** Positive Preliminary reply & \multicolumn{1}{p{10.5cm}}{\raggedright Requested action initiated, expect reply before sending new command.}\\
+	2** Positive Completion reply & Requested action completed, new command can be sent.\\
+	3**~ Positive Intermediate reply& Command received, server waiting for further information. \\
+	4**~ Transient Negative Completion reply& \multicolumn{1}{p{10.5cm}}{\raggedright Command not accepted, action did not take place. Error is temporary and action may be requested again.}\\
+	5**~ Permanent Negative Completion reply & \multicolumn{1}{p{10.5cm}}{\raggedright Command not accepted, action did not take place. User discouraged from repeating same request. }\\
+\end{tabular}
+
+A description of the All implemented FTP commands as well as the expected replies are detailed within table 1 below.
+
+\begin{table}[h]
+	\label{commandTable}
+	\caption{Implemented FTP commands and the server reply they invoke}
 
 \begin{tabular}{|l|l|l|}
+	
 	\hline 
 	\textbf{Command} & \textbf{Command Description} & \textbf{Server Replies} \\ 
 	\hline 
@@ -431,7 +446,20 @@ The development process of a File Transfer Protocol application, built in Python
 	MODE & \multicolumn{1}{p{6cm}|}
 	{\raggedright Specifies the transfer mode of the file which is to be uploaded to or downloaded from the server.  Stream transfer mode is implemented.} &  \multicolumn{1}{p{8.3cm}|}
 	{\raggedright 200 Switching to Stream transfer mode.  \\ 504 Command not implemented for that parameter.} \\ 
+
 	\hline 
+	
+
+\end{tabular}
+\end{table}
+
+
+\begin{tabular}{|l|l|l|}
+	
+	\hline
+	\textbf{Command} & \textbf{Command Description} & \textbf{Server Replies} \\ 
+	
+		\hline 
 	RETR & \multicolumn{1}{p{6cm}|}
 	{\raggedright A copy of a file existing on the server is sent to the client over a data connection. The command argument is the name of the file to be retrieved.} &  \multicolumn{1}{p{8.3cm}|}
 	{\raggedright 150 Opening data connection. \\ 226 Closing data connection. File action successful. \\ 550 Requested action not taken. File unavailable. \\ 451 Requested action aborted: local error in processing. \\ 425 Use \texttt{PORT} or \texttt{PASV} first.} \\ 
@@ -440,23 +468,6 @@ The development process of a File Transfer Protocol application, built in Python
 	{\raggedright A copy of a file existing on the client's computer is sent to the server over a data connection. The command argument is the name of the file to be stored.} &  \multicolumn{1}{p{8.3cm}|}
 	{\raggedright 150 File status okay. Opening data connection. \\ 226 Closing data connection. File action successful. \\ 550 Requested action not taken. File transfer unsuccessful.  \\ 425 Use \texttt{PORT} or \texttt{PASV} first.} \\  
 	\hline 
-	DELE & \multicolumn{1}{p{6cm}|}
-	{\raggedright A specified file is deleted from the server. The argument is the name of the file to be deleted } &  \multicolumn{1}{p{8.3cm}|}
-	{\raggedright 250 Requested file action okay, file deleted. \\ 550 Requested action not taken. To delete directory use \texttt{RMD}. \\ 550 Requested action not taken. File does not exist.} \\  
-	\hline 
-	PWD & \multicolumn{1}{p{6cm}|}
-	{\raggedright Returns the working directory of the server. } &  \multicolumn{1}{p{8.3cm}|}
-	{\raggedright 257 "\textbackslash\textit{currentDirectory}" is the working directory.} \\ 
-	\hline 
-	LIST & \multicolumn{1}{p{6cm}|}
-	{\raggedright Returns a list of of the contents of the working directory on the server.} &  \multicolumn{1}{p{8.3cm}|}
-	{\raggedright 150 Opening data connection. Sending directory list. \\ 226 Closing data connection. Directory list sent.} \\ 
-	\hline
-
-\end{tabular}
-\begin{tabular}{|l|l|l|}
-	
-	\hline
 	MKD & \multicolumn{1}{p{6cm}|}
 	{\raggedright Makes a new directory in the server's working directory. The argument specifies the name of the new directory.} &  \multicolumn{1}{p{8.3cm}|}
 	{\raggedright 257 "\textbackslash\textit{currentDirectory}\textbackslash\textit{newDirectory}" created.\\ 550 Requested action not taken. Directory already exists.} \\ 
@@ -476,13 +487,36 @@ The development process of a File Transfer Protocol application, built in Python
 
 \end{tabular} 
 
+\newpage
+
+\section{Client Interface}\label{sec:GUIAppendix}
+\setcounter{figure}{0} \renewcommand{\thefigure}{B\arabic{figure}}
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=0.8\columnwidth]{interface.png}
+	\caption{Screenshot of the client GUI once a user has logged in}
+	\raggedright
+	\label{fig:ClientGUI}
+\end{figure}
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=0.8\columnwidth]{delDir.png}
+	\caption{Screenshot of the client GUI after an attempt to delete a directory}
+	\raggedright
+	\label{fig:ClientDel}
+\end{figure}
+
+\newpage
 
 \section{Testing Results}\label{sec:wireshark}
+\setcounter{figure}{0} \renewcommand{\thefigure}{C\arabic{figure}}
 
 \begin{figure}[h]
 	\centering
 	\includegraphics[width=0.9\columnwidth]{ClientServer1anno.png}
-	\caption{blah blahr}
+	\caption{Wireshark screenshot 1 of functionality testing with implemented FTP server}
 	\raggedright
 	\label{fig:ourWS1}
 \end{figure}
@@ -490,7 +524,7 @@ The development process of a File Transfer Protocol application, built in Python
 \begin{figure}[h]
 	\centering
 	\includegraphics[width=0.9\columnwidth]{ClientServer2anno.png}
-	\caption{blah}
+	\caption{Wireshark screenshot 2 of functionality testing with implemented FTP server}
 	\raggedright
 	\label{fig:ourWS2}
 \end{figure}
@@ -513,22 +547,7 @@ The development process of a File Transfer Protocol application, built in Python
 
 \newpage
 
-\section{Client Interface}\label{sec:GUIAppendix}
-\begin{figure}[h]
-\centering
-\includegraphics[width=0.8\columnwidth]{interface.png}
-\caption{Screenshot of the client GUI once a user has logged in}
-\raggedright
-\label{fig:ClientGUI}
-\end{figure}
 
-\begin{figure}[h]
-\centering
-\includegraphics[width=0.8\columnwidth]{delDir.png}
-\caption{Screenshot of the client GUI after an attempt to delete a directory}
-\raggedright
-\label{fig:ClientDel}
-\end{figure}
 
 \end{appendix} 	
 
