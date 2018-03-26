@@ -133,18 +133,17 @@ It is the responsibility of the client to handle errors that are not relevant to
 \subsubsection{Client Interface} $      $\label{GUI}
 
 %Sash%%%%%%%%%%%%%%%
-The FTP client is handled by a simple GUI containing entry fields for the client's credentials, windows displaying files hosted in local and remote directories, the two viewed directories' addresses, a terminal response window and a custom command entry field, as shown in [REF]. 
+The FTP client is handled by a simple GUI containing entry fields for the client's credentials, windows displaying files hosted in local and remote directories, the two viewed directories' addresses, a terminal response window and a custom command entry field, as shown in Figure \ref{fig:ClientGUI} in Appendix~\ref{sec:GUIAppendix}. 
 
-On start of the application the client is shown, and is able to navigate through, their local file system as well as delete files within it.
-With the correct input of their assigned username and password, as well as the address of the server to which they wish to connect, the client is logged in and is able to do the same with their remote directory. 
+%On start of the application the client is shown, and is able to navigate through, their local file system as well as delete files within it.
+%With the correct input of their assigned username and password, as well as the address of the server to which they wish to connect, the client is logged in and is able to do the same with their remote directory. 
 
-Once logged in, the client is able to select and upload files from their local system to the remote one, download files hosted by the server to their local system and is able to create new directories on the remote server.
+%Once logged in, the client is able to select and upload files from their local system to the remote one, download files hosted by the server to their local system and is able to create new directories on the remote server.
 
-Clients are able to delete files on both their local and remote systems. Directories can be deleted from the server but, as all containing files and folders are also removed, the client is first prompted by a pop-up warning in order to do so.
+%Clients are able to delete files on both their local and remote systems. Directories can be deleted from the server but, as all containing files and folders are also removed, the client is first prompted by a pop-up warning in order to do so.
+Once logged into the application the client can navigate through both their remote and local file systems, as well as delete and transfer files between them. The server's response to all actions described above are displayed in a terminal-like window. 
 
-The server's response to all actions described above are displayed in a terminal-like window. 
-
-The client is able to disconnect from the server through a 'DISCONNECT' button provided by the GUI. Alternatively, the closing of the developed application terminates the connection between the client and server.
+The client is able to disconnect from the server through the GUI. Alternatively, the closing of the developed application terminates the connection between the client and server.
 
 In addition to the functionality provided by the GUI, the client is able to enter custom commands through a provided entry field. 
 
@@ -256,31 +255,26 @@ The \texttt{AUTH} command was implemented after system testing with the standard
 
 % I rate it'll be nice to talk about stuff from a button point of view. like what chain of events happenss when the things are initiated. I'll email you
 
-Client intro
+The client side of the application is run with a simple GUI, developed using Python's TkInter module. The main function of the GUI is to view both local and remote file systems and working directories simultaneously. On the local side, this is done by using the \texttt{os} module's \texttt{getcwd()} and \texttt{listdir()} functions. On the remote side, \texttt{PWD} and \texttt{LIST} commands are sent to the server. The results are then displayed using TkInter \texttt{ListBox} widget and are selected and navigated through using click and double-click functions.
 
-
-\subsubsection{Server Connection}
-\subsubsection*{Connection to Server}
-In order to connect to the server, the client provides their assigned username, password, the address of the server to which they wish to connect and the port on which it is running (if it is not the default port: 21). On press of the 'CONNECT' button, the login process is run. The client's entered username is sent to the server by making use of the \texttt{USER} command and its password with the \texttt{PASS} command. On the reception of a '230' response from the server, confirming that the supplied login credentials are correct, the client is logged in and is able to view and interact with their server-hosted file directory.
+\subsubsection*{Connection To and Disconnection From The  Server}
+In order to connect to the server, the client provides their assigned username, password, the address of the server to which they wish to connect and the port on which it is running (if it is not the default port: 21). On press of the 'CONNECT' button, the login process is run through making use of the \texttt{USER} and \texttt{PASS} commands. On the reception of a '230' response from the server,the client is logged in and is able to view and interact with their server-hosted file directory.
  
-\subsubsection*{Disconnection from Server} 
 The client is disconnected from the server on click of the 'DISCONNECT' button, causing the above described \texttt{QUIT} command to be run. Additionally, if the client fails to disconnect before closing the application window the \texttt{QUIT} command is run automatically.
 
-\subsubsection{File Management}
 \subsubsection*{File Transfer}
-Following the selection of a file, the user is able to either upload a file from their local system or download one from their remote repository. When doing so, on press of the corresponding 'UPL' or 'DWNL' buttons, a passive connection is created by making use of the \texttt{PASV} command. Following, the file type is confirmed by passing the file name to the \texttt{TYPE} command where its extension is searched for and the transfer type is changed between ASCII and Binary mode, depending on whether the file to be transferred is a text-based or media-based file.
+Following the selection of a file, the user is able to either upload a file from their local system or download one from their remote repository. When doing so, on press of the corresponding 'UPL' or 'DWNL' buttons, a passive connection is created by making use of the \texttt{PASV} command. Following, the file type is confirmed by passing the file name to the \texttt{TYPE} command where the transfer type is changed between ASCII and Binary mode.
 
 \subsubsection*{File \& Folder Creation \& Deletion}
 File creation functionality has not been implemented on neither the local nor remote side of the application. Directories, however, can be created on the remote side. On press of the 'NEW DIR' button, a pop-up window is displayed where the client can enter a desired directory name which is passed to the \texttt{MKDR} command. The directory is created and shown in the remote file system. 
 
-On selection of a file or directory, the client is able to press a 'DELETE' button on both the local and remote sides of the application. On the local side, the Python's \texttt{os} module's functionality is used to check if the selection is a file or directory. If a directory, a popup is shown informing the client that directories cannot be deleted. If a file, the \texttt{os} module is once again used to delete the selected file. On the remote side, the selection is once again checked to be a file or directory. If a directory, the folder name is passed to the \texttt{RMD} command in order to delete it or, if a file, the name is passed to the \texttt{DELE} command to do the same.
+On selection of a file or directory, the client is able to press a 'DELETE' button on both the local and remote sides of the application. On the local side, the Python's \texttt{os} module's functionality is used to check if the selection is a file or directory. If a directory, a popup is shown, as can be seen in Figure~\ref{fig:ClientDel} in Appendix~\ref{sec:GUIAppendix}, informing the client that directories cannot be deleted. If a file, the \texttt{os} module is once again used to delete it. On the remote side, the selection is once again checked to be a file or directory before running either the \texttt{RMD} or \texttt{DELE} commands.
 
-\subsubsection{Client Experience}
-\subsubsection*{Custom Commands}
-\subsubsection*{System Responses}
-\subsubsection*{GUI}
+\subsubsection*{Custom Command Line}
+Included in the GUI is  a custom command line terminal. The terminal has an entry field for users to enter custom commands to the system in order for them not to be limited to the functionality that the GUI allows. In addition, the terminal window provided prints out any responses received by the server from both the custom commands and processes run through the GUI.
 
-
+%\subsubsection*{GUI}
+%The client side of the program is run with a GUI, as described above. This was developed using Python's TkInter module. The main function of the GUI is to view both local and remote file systems and working directories simultaneously. On the local side, this is done by using the \texttt{os} module's \texttt{getcwd()} and \texttt{listdir()} functions. On the remote side, \texttt{PWD} and \texttt{LIST} commands are sent to the server. The results are then displayed using TkInter \texttt{ListBox} widget and are selected and navigated through using click and double-click functions.
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -301,7 +295,7 @@ Interactions between the implemented FTP client and server are seamless. All imp
 
 In the test case, the client connects to the server and logs in. The client gets the directory listing and is able to navigate the file system. New directories can be created and deleted and files can be deleted. The data connection works in both passive and active mode (\texttt{PORT}) and both binary and ASCII files can be uploaded and downloaded.
  
-Figure~??REF?? shows the developed client GUI and depicts the local and remote file systems. 
+Figure~\ref{fig:ClientGUI} in Appendix \ref{sec:GUIAppendix} shows the developed client GUI and depicts the local and remote file systems. 
 
 \subsection{FTP Client interaction with standard FTP server}
 
@@ -331,8 +325,10 @@ A summary of the successes and limitations of the file transfer application are 
 \subsection{Successes}
 
 The system can be considered a success as is it well implemented and fully functional. This is proven by the results obtained and presented in Section~\ref{results}. The system fulfils all requirements of a file transfer application. These include:
+<<<<<<< HEAD
 
 \vspace*{-2mm}
+
 \begin{itemize}
 	\item Both the client and server are able to meet the minimum requirements of FTP specified by RFC~959~\cite{rfc959}.
 	\item The client utilises a simple UI which allows the user to perform all required tasks.
@@ -348,35 +344,36 @@ The system can be considered a success as is it well implemented and fully funct
 Rather than making use of high-level FTP libraries, the implementation makes use of low-level sockets. The implementation of functionality beyond the scope of the minimum requirements is considered a success as it adds to the usability of the system. Additionally, the server implementation of more than five reply codes enables a greater understanding of the server status and actions taken.
 
 %% SASH %%% please finish this, I have to go get ready now.. 
-% good that GUI always knows status of server as after every interaction the list is refreshed
+Another success is the accuracy of the GUI's representation of the back-end file system. With each operation the view is updated in order to display the current list of files hosted in both local and remote repositories. As a result the client cannot attempt to perform operations on files which do not exist and are able to get visual feedback on new file and folder creation.
 
 \subsection{Limitations}
-% only file and stream
-% files are overwritten if they already exist
-
+Only the 'stream' data mode has been implemented. Unlike the 'compressed' and 'block' modes it is unreliable when determining the time at which a connection should be closed. Another limitation is that transfer of files and folders with duplicated names overwrite those pre-existing, possibly causing the loss of important data on both local and remote systems.
 
 \subsection{Future Improvements}
+The developed application does not integrate well with the chosen, standard FTP client. In future another client should be chosen, or the reasons they differ should be investigated in order to adapt methods and have a more seamless integration.
 
-% doesnt work well with standard ftp client chosen, maybe try another or investigate reason for problem and adapt
-% more ftp functionality
-% include security for transferring login details
+Security, such as hash encoding passwords or implementing SSL, could be provided for user login.
 
+Additionally, more FTP functionality could be implemented, such as features omitted as described in sections 2.1 ans 2.2.2.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{CODE STRUCTURE AND REQUIREMENTS}
 
-\subsubsection*{Code Structure: } The server code is contained within a single file, \textit{FTPserver.py}, and defines the two threading classes used to handle simultaneous client connections. All FTP functionality is implemented through methods defined in the \texttt{clientThread} class. The client implementation is divided into logical and interface components. The interface makes use of the \texttt{clientLogic} class to initiate and handle all interactions with the server.  
-
-%%% SASH %%%
-
+\subsubsection*{Code Structure: } The server code is contained within a single file, \textit{FTPserver.py}, and defines the two threading classes used to handle simultaneous client connections. All FTP functionality is implemented through methods defined in the \texttt{clientThread} class. The client implementation is divided into logical and interface components. The interface makes use of the \texttt{clientLogic} class to initiate and handle all interactions with the server and is contained within the \textit{interface.py} file.  
+ 
 \subsubsection*{Requirements: }
-%%%% Sash %%%% whats needed to run code and how you compile and if you have to download andthing fot tkinter etc
+%%%% Sash %%%%
+The application has been developed to be run using Python 2.7. In order to run the GUI, the TkInter module needs to be installed. In order to run the application, first the server has to be run using the following command:
 
-% python FTPserver.py to run server etc. Look at kayla's report
+\texttt{python FTPserver.py}
+
+Following, the client is run using the following command:
+
+\texttt{python interface.py}
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{CONCLUSION}
-
+The development process of a File Transfer Protocol application, built in Python 2.7, has been described, as well as details on its implementation. The development was considered a success as it meets more than the minimum requirements laid out by the RFC~959 specification. In addition, correct protocols followed were confirmed through the use of Wireshark, and a GUI was implemented successfully displaying both local and remote file systems. In future security could be added to the login process and additional FTP functionality could be implemented.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %
@@ -514,9 +511,26 @@ Rather than making use of high-level FTP libraries, the implementation makes use
 \label{fig:WitsWS2}
 \end{figure}
 
+\newpage
 
+\section{Client Interface}\label{sec:GUIAppendix}
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.8\columnwidth]{interface.png}
+\caption{Screenshot of the client GUI once a user has logged in}
+\raggedright
+\label{fig:ClientGUI}
+\end{figure}
 
-\end{appendix}
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.8\columnwidth]{delDir.png}
+\caption{Screenshot of the client GUI after an attempt to delete a directory}
+\raggedright
+\label{fig:ClientDel}
+\end{figure}
+
+\end{appendix} 	
 
 %{\tiny \vfill \hfill \today \hspace{5mm} witseie-paper-2003.\TeX}
 
