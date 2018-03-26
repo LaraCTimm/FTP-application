@@ -354,7 +354,7 @@ def connectButton():
 	else:
 		global logic
 		if isConnected == False:
-			logic = clientLogic(addressEntry.get())
+			logic = clientLogic(addressEntry.get(), portEntry.get())
 			reply = logic.clientSock.recv(256)
 			printToTerminal(reply)
 			isConnected = True

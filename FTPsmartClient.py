@@ -99,11 +99,7 @@ if reply[:3] == '220':       # wait for service ready response
 
             elif functionName == 'NOOP':
                 logic.NOOP()
-
-            # elif functionName == 'AUTH':
-            #     logic.clientSock.send('AUTH TLS')
-            #     #logic.getReply()
-            
+                
             else:
                 raise Exception('Command not found')
         except Exception, err:

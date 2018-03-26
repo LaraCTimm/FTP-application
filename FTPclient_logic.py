@@ -4,12 +4,15 @@ import os
 isLoggedIn=False
 
 class clientLogic():
-    def __init__(self, servIP):
+    def __init__(self, servIP, servPort):
         self.locIP = socket.gethostbyname(socket.gethostname())
 
         # make command connection with server
         self.servIP = servIP
-        self.servPort = 21
+        if servPort != '' and servPort != 'Port':
+            self.servPort = int(servPort)
+        else:
+            self.servPort = 21
         self.clientSock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.clientSock.connect((self.servIP, self.servPort))
 
@@ -23,7 +26,6 @@ class clientLogic():
         self.doneSending = False
         self.doneReceiving = False
 
-    # NEED TO SET THIS UP TO DEAL WITH REPLIES THAT EXPECT OTHER REPLIES ##########################
     def getReply(self):
         self.reply = self.clientSock.recv(1024)
         print 'Response:', self.reply
@@ -67,6 +69,7 @@ class clientLogic():
 
     # TRANSFER PARAMETER COMMANDS --------------------------------------------------------------
 
+    # AUTHORED BY LARA TIMM ######################################################
     def PORT(self, ipAddr, port):
         # specifies and sets the address/port to be used in the data connection
 
@@ -79,8 +82,6 @@ class clientLogic():
 
         # create and listen on port for data connection from server
         self.activeSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        print ipAddr
-        print port
         self.activeSocket.bind((ipAddr, port))
         self.activeSocket.listen(1)
         self.clientSock.send('PORT '+ connectionString +'\r\n')
@@ -117,6 +118,7 @@ class clientLogic():
 
         self.calledPortPasv = True
         self.passive = True
+    ##############################################################################
 
     def TYPE(self, fileName):
         # send the server the type code for the data being transferred
@@ -138,7 +140,6 @@ class clientLogic():
         else:
             print 'Specified file type not recognised'
             return
-        
 
     def STRU(self, structureCode):
         # send file structure to the server
@@ -154,6 +155,7 @@ class clientLogic():
 
     # SERVICE COMMANDS -------------------------------------------------------------------------
 
+    # AUTHORED BY LARA TIMM ######################################################
     def RETR(self, fileName):
         # receive a copy file over data connection
         self.doneReceiving = False
@@ -271,7 +273,8 @@ class clientLogic():
             self.activeSocket.close()
         self.dataStreamSocket.close()
         self.calledPortPasv = False
-    
+    ##############################################################################
+
     def DELE(self, fileName):
         # send delete command to server
 
@@ -283,6 +286,7 @@ class clientLogic():
         self.clientSock.send('PWD\r\n')
         self.getReply()
 
+    # AUTHORED BY LARA TIMM ######################################################
     def LIST(self):
         # ask the server for a list of the files in the current working directory
         
@@ -327,7 +331,8 @@ class clientLogic():
         self.close_dataSocket()     # close the data connection
 
         self.getReply()
-    
+    ##############################################################################
+
     def MKD(self, dirName):
         # instruct the server to make a directory with the name dirName
 
