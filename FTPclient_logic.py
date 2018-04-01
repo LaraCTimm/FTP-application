@@ -31,7 +31,9 @@ class clientLogic():
         print 'Response:', self.reply
         print ("")
 
-    # ACCESS CONTROL COMMANDS ------------------------------------------------------------------
+    # AUTHORED BY SASHA BERKOWITZ ------------------------------------------------
+
+# ACCESS CONTROL COMMANDS 
 
     def USER(self, username):
         # send username to server
@@ -66,8 +68,9 @@ class clientLogic():
         if self.reply[:2] == '221':
             self.clientSock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
             self.clientSock.close()
+    #-----------------------------------------------------------------------------
 
-    # TRANSFER PARAMETER COMMANDS --------------------------------------------------------------
+# TRANSFER PARAMETER COMMANDS 
 
     # AUTHORED BY LARA TIMM ######################################################
     def PORT(self, ipAddr, port):
@@ -120,6 +123,7 @@ class clientLogic():
         self.passive = True
     ##############################################################################
 
+    # AUTHORED BY SASHA BERKOWITZ ------------------------------------------------
     def TYPE(self, fileName):
         # send the server the type code for the data being transferred
 
@@ -153,7 +157,9 @@ class clientLogic():
         self.clientSock.send('MODE '+transferMode +'\r\n')
         self.getReply()
 
-    # SERVICE COMMANDS -------------------------------------------------------------------------
+    #-----------------------------------------------------------------------------
+
+# SERVICE COMMANDS
 
     # AUTHORED BY LARA TIMM ######################################################
     def RETR(self, fileName):
@@ -275,6 +281,7 @@ class clientLogic():
         self.calledPortPasv = False
     ##############################################################################
 
+    # AUTHORED BY SASHA BERKOWITZ ------------------------------------------------
     def DELE(self, fileName):
         # send delete command to server
 
@@ -285,6 +292,7 @@ class clientLogic():
         # ask the server to send the current working directory
         self.clientSock.send('PWD\r\n')
         self.getReply()
+    #-----------------------------------------------------------------------------
 
     # AUTHORED BY LARA TIMM ######################################################
     def LIST(self):
@@ -333,6 +341,7 @@ class clientLogic():
         self.getReply()
     ##############################################################################
 
+    # AUTHORED BY SASHA BERKOWITZ ------------------------------------------------
     def MKD(self, dirName):
         # instruct the server to make a directory with the name dirName
 
@@ -349,3 +358,4 @@ class clientLogic():
         # ask the directory to send an okay response
         self.clientSock.send('NOOP\r\n')
         self.getReply()
+    #-----------------------------------------------------------------------------
