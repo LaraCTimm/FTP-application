@@ -86,6 +86,7 @@ def delLocalButton():
 # Function to upload local file
 def uplLocalButton():
 	global selectedLocal
+	global mypath
 	if isConnected == True:
 		if(len(selectedLocal) < 1):
 			tkMessageBox.showinfo("Upload Error", "No file selected!")
@@ -93,10 +94,10 @@ def uplLocalButton():
 			tkMessageBox.showinfo("Upload Error", "Directories cannot be Uploaded. \n Please select a file.")
 		else:
 			
-			logic.TYPE(selectedLocal)
+			logic.TYPE(mypath + '\\' + selectedLocal)
 			logic.PASV()
 			printToTerminal('Uploading file...')
-			logic.STOR(selectedLocal)
+			logic.STOR(mypath + '\\' + selectedLocal)
 			if logic.reply[:3] == '226':
 				printToTerminal('File Upload Successful\n')
 			getDirFiles()
@@ -551,6 +552,7 @@ def goUpDir():
     cwdPath = '\\'.join(var[:-1])
     print cwdPath
     mypath = cwdPath
+    printToTerminal(mypath)
     contents = os.listdir(mypath)
     populateListBox(contents)
     localAdd = Label(window, text=mypath,bg='black',fg='white',width=60).grid(column=0,row=2,columnspan=2)
@@ -569,17 +571,18 @@ def goUpDirServ():
 # Function called to change local, working directory
 def changeWorkingDir():
 	global mypath
+
 	value = str((mylist.get(mylist.curselection())))
 	print 'double', value
 	if value == '..':
 		goUpDir()
 		
-	if value[0] == '>':
+	elif value[0] == '>':
 		dirPath = os.path.join(mypath, value[4:])
-        if os.path.isdir(dirPath):
-            mypath = dirPath
-            contents = os.listdir(mypath)
-            populateListBox(contents)
+		if os.path.isdir(dirPath):
+			mypath = dirPath
+			contents = os.listdir(mypath)
+			populateListBox(contents)
 	localAdd = Label(window, text=mypath,bg='black',fg='white',width=60).grid(column=0,row=2,columnspan=2)
 
 # Function called to get remote path
