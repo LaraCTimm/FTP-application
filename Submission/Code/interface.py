@@ -553,7 +553,6 @@ def goUpDir():
     cwdPath = '\\'.join(var[:-1])
     print cwdPath
     mypath = cwdPath
-    printToTerminal(mypath)
     contents = os.listdir(mypath)
     populateListBox(contents)
     localAdd = Label(window, text=mypath,bg='black',fg='white',width=60).grid(column=0,row=2,columnspan=2)
