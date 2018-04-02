@@ -130,6 +130,7 @@ def delDir():
 def dnlServButton():
 	global mypath
 	global selectedRemote
+	logic.baseDirectory = mypath
 	if(len(selectedRemote) < 1):
 		tkMessageBox.showinfo("Download Error", "No file selected!")
 	elif selectedRemote[0] == '>':
