@@ -12,6 +12,8 @@ locPort = 21                                        # default port for FTP comma
 
 # this directory must exist and should contain a directory for each registered user
 serverDirectory = os.path.abspath('./serverDirectory')
+if not os.path.isdir(serverDirectory):
+    os.makedirs(serverDirectory)
 
 #---------------------------------------------------------------------------
 

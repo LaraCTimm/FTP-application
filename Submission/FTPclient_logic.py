@@ -21,7 +21,7 @@ class clientLogic():
         self.passive = True
         self.passiveServerPort = ''
         self.passiveServerIP = ''
-        self.baseDirectory = os.path.abspath('./clientDirectory')
+        self.baseDirectory = os.path.abspath('.')
         self.calledPortPasv = False
         self.doneSending = False
         self.doneReceiving = False
