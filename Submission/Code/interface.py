@@ -87,6 +87,7 @@ def delLocalButton():
 def uplLocalButton():
 	global selectedLocal
 	global mypath
+	logic.baseDirectory = mypath
 	if isConnected == True:
 		if(len(selectedLocal) < 1):
 			tkMessageBox.showinfo("Upload Error", "No file selected!")
@@ -94,10 +95,12 @@ def uplLocalButton():
 			tkMessageBox.showinfo("Upload Error", "Directories cannot be Uploaded. \n Please select a file.")
 		else:
 			
-			logic.TYPE(mypath + '\\' + selectedLocal)
+			logic.TYPE(selectedLocal)
+			# logic.TYPE(mypath + '\\' + selectedLocal)
 			logic.PASV()
 			printToTerminal('Uploading file...')
-			logic.STOR(mypath + '\\' + selectedLocal)
+			logic.STOR(selectedLocal)
+			#logic.STOR(mypath + '\\' + selectedLocal)
 			if logic.reply[:3] == '226':
 				printToTerminal('File Upload Successful\n')
 			getDirFiles()
@@ -193,8 +196,6 @@ def getDirFiles():
 			remoteList.append('     '+fileDet[(index+4):])
 
 	populateListBoxServ(remoteList)
-
-		
 
 
 # Function called when directory or file is selected
